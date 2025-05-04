@@ -3,6 +3,8 @@ let offsetXBase;
 let offsetYBase;
 let frameCount = 0; // フレーム数をカウントする変数を追加
 
+let yValues = [];
+
 function setup(){
   colorMode(HSB);
   noStroke(); // 枠線を無くす
@@ -10,12 +12,20 @@ function setup(){
   offsetYBase = random(1000); // 初期値をランダムに設定
   createCanvas(windowWidth, windowHeight);
   // createCanvas(400, 400);
+
+  // yValuesの初期化
+  for (let i = 0; i < width; i++) {
+    yValues.push(height / 2); // 初期値で埋める
+  }
+
   frameRate(15);
+  // frameRate(30);
 }
 
 
-
-// sin波を各関数
+/**
+  * sin波を各関数
+  */
 function draw2() {
 //   frameCount++; // フレーム数をインクリメント
 //   // 例えば、60フレームごとに背景を白で塗りつぶす
@@ -38,7 +48,52 @@ function draw2() {
   time += 1; // 時間を進める
 }
 
+/**
+  * マウスの動作を見る
+  */
+function draw4() {
+  background(255);
 
+  // マウスのX位置に応じて色相を変化させる
+  let hue = map(mouseX, 0, width, 0, 360);
+  fill(hue, 100, 100);
+
+  // マウスの位置に円を描く
+  ellipse(mouseX, mouseY, 50, 50);
+}
+
+/**
+  * yValuesの波を書く
+  */
+function draw3() {
+  background(255);
+  stroke(0);
+  noFill();
+
+  // 新しいy値を計算して配列に追加（右から入ってくる）
+  let randomFactor = random(-5, 5);
+  let newY = height / 2 + sin(time) * 10 * randomFactor + cos(time) * 10 * randomFactor;
+  yValues.push(newY);
+
+  // 配列の長さが画面幅を超えないように先頭を削除
+  if (yValues.length > width) {
+    yValues.shift();
+  }
+
+  // 描画
+  beginShape();
+  for (let x = 0; x < yValues.length; x++) {
+    vertex(x, yValues[x]);
+  }
+  endShape();
+
+  time += 1; // ゆっくり進める
+}
+
+
+/**
+  * 綺麗な模様を描く
+  */
 function draw() {
   // 背景色を青に設定します。以前はlightgreenがコメントアウトされていました。
   background('blue');
@@ -53,12 +108,10 @@ function draw() {
   // 画面全体を小さな四角形で埋め尽くすためのループを開始します。
   for (let y = -30; y < height + 30; y += boxSize) {
     for (let x = -30; x < width + boxSize + 30; x += boxSize) {
-
       // より複雑な歪みを作るために、さらにsinとcosを重ね合わせてオフセットを計算します。
-      let offsetX = sin(x * 0.05 + time * 0.02) * 3 * randomFactorX + cos(time * 0.03) * 2 * randomFactorX;
-      let offsetY = cos(y * 0.03 + time * 0.02) * 3 * randomFactorY + sin(time * 0.04) * 2 * randomFactorY;
-      // let offsetX = sin(x * 0.05 + time * 0.02) * randomFactorX + cos(time * 0.03) * randomFactorX;
-      // let offsetY = cos(y * 0.03 + time * 0.02) * randomFactorY + sin(time * 0.04) * randomFactorY;
+      let offsetX = sin(x * 0.05 + time * 0.02) * randomFactorX + cos(time * 0.03) * 2 * randomFactorX;
+      let offsetY = cos(y * 0.03 + time * 0.02) * randomFactorY + sin(time * 0.04) * 2 * randomFactorY;
+
       // H (Hue): 色相、赤、緑、青などを表します。0-360 の範囲で、0が赤、120が緑、240が青などです。
       // S (Saturation): 彩度、色の鮮やかさを表します。0-100 の範囲で、0が色なし（白や黒）、100が最も鮮やかです。
       // B (Brightness): 明度、明るさを表します。0-100 の範囲で、0が真っ暗、100が最も明るいです。
@@ -71,6 +124,12 @@ function draw() {
       rect(x + offsetX, y + offsetY, boxSize + 1, boxSize + 1);
     }
   }
+
+  // let hue = map(mouseX, 0, width, 0, 360);
+  // fill(hue, 100, 100);
+
+  // // マウスの位置に円を描く
+  // ellipse(mouseX, mouseY, 50, 50);
   // 時間の進行を少し遅くして、アニメーションを滑らかにします。
   time += 1;
 }

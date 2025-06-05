@@ -2,7 +2,6 @@ precision mediump float;
 
 // 頂点シェーダーから受け取る法線ベクトル
 varying vec3 vNormal;
-varying vec3 vPosition; // 頂点の位置を受け取る
 uniform float uTime; // 時間を受け取るユニフォーム
 
 // パラメータ用のユニフォーム変数
@@ -41,23 +40,13 @@ vec3 hsv2rgb(vec3 c) {
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-// フレネル効果の計算（視線と法線の角度に基づく反射率）
-float fresnel(vec3 normal, vec3 viewDir, float power) {
-    return pow(1.0 - abs(dot(normal, viewDir)), power);
-}
-
 void main() {
-    // 法線ベクトルを正規化
-    vec3 normal = normalize(vNormal);
-    
-    // 視線ベクトル（カメラから頂点への方向）
-    vec3 viewDir = normalize(-vPosition);
-    
     // 法線ベクトルをRGBカラーに変換
-    vec3 normalColor = normal * 0.5 + 0.5;
+    // normalizeで正規化し、0.5を足して色の範囲を0.0から1.0に調整
+    vec3 normalColor = normalize(vNormal) * 0.5 + 0.5;
     
     // 法線ベクトルを使ってノイズのシード値を生成
-    vec2 noiseSeed = normal.xy * 3.0; // スケールを大きくして変化を強調
+    vec2 noiseSeed = vNormal.xy * 3.0; // スケールを大きくして変化を強調
     
     // 時間スケールを適用
     float scaledTime = uTime * uTimeScale;
@@ -66,27 +55,11 @@ void main() {
     float noiseValue = noise(noiseSeed + vec2(scaledTime * 0.2));
     
     // エッジを強調（法線の変化が大きい部分）
-    float edge = 1.0 - abs(dot(normal, vec3(0.0, 0.0, 1.0)));
+    float edge = 1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0)));
     edge = pow(edge, 2.0); // エッジをより鮮明に
     
-    // フレネル効果（視線と法線の角度に基づく）- より滑らかに
-    float fresnelEffect = fresnel(normal, viewDir, 3.0);
-    
-    // 虹色効果（シャボン玉の干渉色）- より滑らかな色の変化
-    float rainbowIntensity = 0.6;
-    float rainbowPhase = fresnelEffect * 2.5 + scaledTime * 0.15;
-    
-    // 滑らかな虹色効果
-    vec3 rainbow = vec3(
-        0.5 + 0.5 * sin(rainbowPhase),
-        0.5 + 0.5 * sin(rainbowPhase + 2.094), // 2π/3
-        0.5 + 0.5 * sin(rainbowPhase + 4.188)  // 4π/3
-    );
-    
-    // 虹色の滑らかさを調整
-    rainbow = mix(vec3(0.5), rainbow, 0.8);
-    
-    // 基本色（透明感のある色）
+    // 色温度に基づいて基本色相を決定
+    // 0.0（寒色）〜1.0（暖色）の範囲で変化
     float baseHue;
     if (uColorTemperature < 0.5) {
         // 寒色系（青〜緑）: 0.5〜0.3
@@ -98,31 +71,28 @@ void main() {
     
     // HSVカラースペースでの色相を計算
     float hue = baseHue + 0.1 * noiseValue + 0.05 * sin(scaledTime * 0.5);
-    float saturation = uColorSaturation * (1.0 - fresnelEffect * 0.5); // フレネル効果で彩度を調整
+    float saturation = uColorSaturation + 0.2 * edge; // エッジで彩度を上げる
     float value = uColorBrightness + 0.2 * normalColor.y; // 明度は法線のY成分に基づく
     
     // HSVからRGBに変換
-    vec3 baseColor = hsv2rgb(vec3(hue, saturation, value));
+    vec3 color = hsv2rgb(vec3(hue, saturation, value));
     
-    // スペキュラハイライト（光の反射）
-    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0)); // 光源方向
-    float specular = pow(max(0.0, dot(reflect(-lightDir, normal), viewDir)), 32.0);
-    vec3 specularColor = vec3(1.0) * specular;
-    
-    // 最終的な色の計算
-    vec3 color = mix(baseColor, rainbow, rainbowIntensity * fresnelEffect);
-    
-    // エッジとスペキュラハイライトを追加
-    color = mix(color, vec3(1.0), edge * uEdgeIntensity * 0.5);
-    color += specularColor;
+    // エッジに基づいて色を調整（エッジを強調）
+    color = mix(color, vec3(1.0), edge * uEdgeIntensity);
     
     // 時間に基づく脈動効果を追加
-    float pulse = 0.03 * sin(scaledTime * 2.0);
-    color += pulse * vec3(0.5, 0.5, 0.8); // 青みがかった脈動
+    float pulse = 0.05 * sin(scaledTime * 2.0);
     
-    // 透明度の計算（エッジに近いほど透明に、より滑らかな変化）
-    float alpha = mix(0.15, 0.7, pow(fresnelEffect, 1.5));
+    // 色温度に基づいて脈動の色を変更
+    vec3 pulseColor;
+    if (uColorTemperature < 0.5) {
+        pulseColor = vec3(0.0, 0.2, 0.5); // 青系の脈動
+    } else {
+        pulseColor = vec3(0.5, 0.2, 0.0); // 赤系の脈動
+    }
     
-    // 計算した色をフラグメントの色として設定（透明度付き）
-    gl_FragColor = vec4(color, alpha);
+    color += pulse * pulseColor;
+    
+    // 計算した色をフラグメントの色として設定
+    gl_FragColor = vec4(color, 1.0);
 }

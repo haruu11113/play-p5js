@@ -91,35 +91,13 @@ float bubbleShape(vec3 direction, float time) {
     // 表面張力による効果（泡の表面は均一に近づこうとする）
     float tension = 0.05 * sin(time * 0.2); // 時間とともに微妙に変化
     
-    // 円の中心位置を生成（時間とともにランダムに変化）
+    // 円の中心位置を生成（より近接させる）
     vec3 centers[5];
-    
-    // 基本位置
     centers[0] = normalize(vec3(sin(time * 0.1), cos(time * 0.15), sin(time * 0.12)));
     centers[1] = normalize(vec3(cos(time * 0.11), sin(time * 0.13), cos(time * 0.1)));
     centers[2] = normalize(vec3(sin(time * 0.12 + 2.0), cos(time * 0.1 + 1.0), sin(time * 0.14)));
     centers[3] = normalize(vec3(cos(time * 0.13 + 3.0), sin(time * 0.12 + 2.0), cos(time * 0.11)));
     centers[4] = normalize(vec3(sin(time * 0.14 + 4.0), cos(time * 0.13 + 3.0), sin(time * 0.15)));
-    
-    // ランダムな変動を追加
-    centers[0] += 0.1 * vec3(sin(time * 0.23), cos(time * 0.19), sin(time * 0.31));
-    centers[1] += 0.1 * vec3(cos(time * 0.29), sin(time * 0.17), cos(time * 0.21));
-    centers[2] += 0.1 * vec3(sin(time * 0.27), cos(time * 0.25), sin(time * 0.33));
-    centers[3] += 0.1 * vec3(cos(time * 0.31), sin(time * 0.23), cos(time * 0.27));
-    centers[4] += 0.1 * vec3(sin(time * 0.33), cos(time * 0.31), sin(time * 0.29));
-    
-    // 正規化して単位球面上に戻す
-    for (int i = 0; i < 5; i++) {
-        centers[i] = normalize(centers[i]);
-    }
-    
-    // 各円の半径（時間とともに変化）
-    float radii[5];
-    radii[0] = 0.7 + 0.2 * sin(time * 0.21);
-    radii[1] = 0.65 + 0.15 * cos(time * 0.19);
-    radii[2] = 0.75 + 0.18 * sin(time * 0.17 + 1.0);
-    radii[3] = 0.68 + 0.22 * cos(time * 0.23 + 2.0);
-    radii[4] = 0.72 + 0.17 * sin(time * 0.25 + 3.0);
     
     // 各円の影響を計算
     float circleInfluence = 0.0;
@@ -135,11 +113,8 @@ float bubbleShape(vec3 direction, float time) {
             // 方向ベクトルと円の中心との距離
             float dist = distance(direction, centers[i]);
             
-            // 円の半径に基づいて影響範囲を調整
-            float radiusEffect = radii[i] * 1.5;
-            
-            // 距離に基づく重み（近いほど影響大、半径が大きいほど影響範囲大）
-            float weight = radiusEffect / pow(dist + 0.3, blendFactor);
+            // 距離に基づく重み（近いほど影響大）
+            float weight = 1.0 / pow(dist + 0.5, blendFactor);
             
             // 重みを累積
             circleInfluence += weight;

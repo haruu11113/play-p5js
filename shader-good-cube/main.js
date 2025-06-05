@@ -3,15 +3,15 @@ let startTime;
 
 // パラメータの初期値
 let params = {
-  circleCount: 5,        // 円の数（1〜10）- floatに変更
-  cornerSharpness: 1.2,   // 角の鋭さ（0.5〜3.0、小さいほど丸く、大きいほど尖る）
-  noiseAmount: 0.2,       // ノイズの強さ（0.0〜1.0）
-  timeScale: 1.0,         // 時間スケール（アニメーション速度、0.1〜2.0）
-  colorTemperature: 0.6,  // 色温度（0.0〜1.0、低いほど寒色、高いほど暖色）
-  colorSaturation: 0.6,   // 彩度（0.0〜1.0）
-  colorBrightness: 0.9,   // 明度（0.0〜1.0）
-  edgeIntensity: 0.7,     // エッジの強調度（0.0〜1.0）
-  rotationSpeed: 0.3      // 回転速度（0.0〜2.0）
+  circleCount: 10,       // 円の数（1〜10）- floatに変更
+  cornerSharpness: 2.5,   // 角の鋭さ（0.5〜3.0、小さいほど丸く、大きいほど尖る）
+  noiseAmount: 0.3,       // ノイズの強さ（0.0〜1.0）
+  timeScale: 2.0,         // 時間スケール（アニメーション速度、0.1〜2.0）
+  colorTemperature: 0.7,  // 色温度（0.0〜1.0、低いほど寒色、高いほど暖色）
+  colorSaturation: 0.5,   // 彩度（0.0〜1.0）
+  colorBrightness: 0.8,   // 明度（0.0〜1.0）
+  edgeIntensity: 1,     // エッジの強調度（0.0〜1.0）
+  rotationSpeed: 2      // 回転速度（0.0〜2.0）
 };
 
 // UIコントロールの表示状態
@@ -26,13 +26,6 @@ function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   noStroke();
   
-  // WebGLレンダラーを取得
-  let gl = this._renderer.GL;
-  
-  // 透明度を有効にする
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  
   // 開始時間を記録
   startTime = millis();
   
@@ -41,8 +34,8 @@ function setup() {
 }
 
 function draw() {
-  // 背景を暗めの青に設定（泡が浮かぶ水中のような雰囲気）
-  background(5, 15, 25);
+  // 背景を黒に設定
+  background(0);
   
   // シェーダーを設定
   shader(normalShader);
@@ -61,8 +54,17 @@ function draw() {
   normalShader.setUniform('uColorBrightness', params.colorBrightness);
   normalShader.setUniform('uEdgeIntensity', params.edgeIntensity);
   
-  // 複数の泡を描画
-  drawBubbles(elapsedTime);
+  // 中心に移動
+  translate(0, 0, 0);
+  
+  // フレーム数に基づいてY軸周りに回転（回転速度を適用）
+  rotateY(frameCount * 0.01 * params.rotationSpeed);
+  
+  // フレーム数に基づいてX軸周りに回転（回転速度を適用）
+  rotateX(frameCount * 0.01 * params.rotationSpeed);
+  
+  // 不規則な形状を描画するための球体（シェーダーで変形される）
+  sphere(200);
   
   // UIコントロールを表示
   if (showControls) {
@@ -174,78 +176,4 @@ function mouseWheel(event) {
   params.circleCount += event.delta > 0 ? -1.0 : 1.0;
   params.circleCount = constrain(params.circleCount, 1.0, 10.0);
   return false; // ページスクロールを防止
-}
-
-// 泡の情報を格納する配列
-let bubbles = [];
-
-// 泡の初期化
-function initBubbles() {
-  bubbles = [];
-  // 15個の泡を生成（より多くの泡で密度を上げる）
-  for (let i = 0; i < 15; i++) {
-    bubbles.push({
-      size: random(30, 150), // サイズ範囲を調整
-      x: random(-width/3, width/3),
-      y: random(-height/3, height/3),
-      z: random(-300, 300),
-      speedY: random(-0.4, -0.05), // 上昇速度（負の値で上に移動）
-      rotX: random(TWO_PI),
-      rotY: random(TWO_PI),
-      rotSpeedX: random(-0.005, 0.005), // 回転速度を少し遅く
-      rotSpeedY: random(-0.005, 0.005),
-      colorOffset: random(0, 1) // 色のバリエーション用
-    });
-  }
-}
-
-// 複数の泡を描画
-function drawBubbles(time) {
-  // 泡が初期化されていなければ初期化
-  if (bubbles.length === 0) {
-    initBubbles();
-  }
-  
-  // 各泡を描画（奥から手前の順に描画して半透明の重なりを適切に表示）
-  // 泡を奥行きでソート
-  bubbles.sort((a, b) => b.z - a.z);
-  
-  // 各泡を描画
-  for (let i = 0; i < bubbles.length; i++) {
-    let b = bubbles[i];
-    
-    // 泡の位置を更新（ゆっくりと上昇）
-    b.y += b.speedY;
-    
-    // 左右にわずかに揺れる動き（サイン波）
-    b.x += sin(time * 0.5 + i) * 0.1;
-    
-    // 回転を更新
-    b.rotX += b.rotSpeedX * params.rotationSpeed;
-    b.rotY += b.rotSpeedY * params.rotationSpeed;
-    
-    // 画面外に出たら下から再登場
-    if (b.y < -height/2 - b.size) {
-      b.y = height/2 + b.size;
-      b.x = random(-width/3, width/3);
-      b.z = random(-300, 300);
-      b.size = random(30, 150); // サイズも再設定
-    }
-    
-    push();
-    // 泡の位置に移動
-    translate(b.x, b.y, b.z);
-    
-    // 泡を回転
-    rotateX(b.rotX);
-    rotateY(b.rotY);
-    
-    // 各泡ごとに少し色を変える
-    let tempOffset = 0.1 * sin(time * 0.2 + b.colorOffset * TWO_PI);
-    normalShader.setUniform('uColorTemperature', params.colorTemperature + tempOffset);
-    
-    // 泡を描画
-    sphere(b.size);
-    pop();
-  }
 }

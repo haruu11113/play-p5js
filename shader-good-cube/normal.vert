@@ -18,7 +18,6 @@ uniform float uTimeScale; // 時間スケール（アニメーション速度、
 
 // フラグメントシェーダーに渡すための変数
 varying vec3 vNormal;
-varying vec3 vPosition; // 頂点位置をフラグメントシェーダーに渡す
 
 // 乱数生成関数
 float random(vec2 st) {
@@ -69,94 +68,63 @@ float smoothFractalNoise(vec3 p) {
     return value / total;
 }
 
-// 泡のような形状を作る関数
-float bubbleShape(vec3 direction, float time) {
-    // 基本的な球形
-    float baseRadius = 1.0;
+// 複数の円を重ね合わせたような形状を作る関数
+float overlappingCircles(vec3 direction, float time) {
+    // 円の中心位置と半径を格納する配列
+    vec3 centers[10];
+    float radii[10];
     
-    // 小さな変形を加える（泡らしい微妙な歪み）
-    float deformation = 0.0;
-    
-    // 複数の周波数の正弦波を使って自然な変形を作る
-    for (int i = 1; i <= 3; i++) {
-        float freq = float(i) * 2.0;
-        float amp = 0.02 / float(i); // 高周波ほど振幅を小さく
-        
-        // 各軸方向の変形
-        deformation += amp * sin(direction.x * freq + time * 0.3);
-        deformation += amp * sin(direction.y * freq + time * 0.4);
-        deformation += amp * sin(direction.z * freq + time * 0.5);
-    }
-    
-    // 表面張力による効果（泡の表面は均一に近づこうとする）
-    float tension = 0.05 * sin(time * 0.2); // 時間とともに微妙に変化
-    
-    // 円の中心位置を生成（時間とともにランダムに変化）
-    vec3 centers[5];
-    
-    // 基本位置
+    // 最大10個の円を定義（実際に使用する数はuCircleCountで制御）
     centers[0] = normalize(vec3(sin(time * 0.1), cos(time * 0.15), sin(time * 0.12)));
     centers[1] = normalize(vec3(cos(time * 0.11), sin(time * 0.13), cos(time * 0.1)));
     centers[2] = normalize(vec3(sin(time * 0.12 + 2.0), cos(time * 0.1 + 1.0), sin(time * 0.14)));
     centers[3] = normalize(vec3(cos(time * 0.13 + 3.0), sin(time * 0.12 + 2.0), cos(time * 0.11)));
     centers[4] = normalize(vec3(sin(time * 0.14 + 4.0), cos(time * 0.13 + 3.0), sin(time * 0.15)));
+    centers[5] = normalize(vec3(cos(time * 0.15 + 5.0), sin(time * 0.14 + 4.0), cos(time * 0.13)));
+    centers[6] = normalize(vec3(sin(time * 0.16 + 6.0), cos(time * 0.15 + 5.0), sin(time * 0.14)));
+    centers[7] = normalize(vec3(cos(time * 0.17 + 7.0), sin(time * 0.16 + 6.0), cos(time * 0.15)));
+    centers[8] = normalize(vec3(sin(time * 0.18 + 8.0), cos(time * 0.17 + 7.0), sin(time * 0.16)));
+    centers[9] = normalize(vec3(cos(time * 0.19 + 9.0), sin(time * 0.18 + 8.0), cos(time * 0.17)));
     
-    // ランダムな変動を追加
-    centers[0] += 0.1 * vec3(sin(time * 0.23), cos(time * 0.19), sin(time * 0.31));
-    centers[1] += 0.1 * vec3(cos(time * 0.29), sin(time * 0.17), cos(time * 0.21));
-    centers[2] += 0.1 * vec3(sin(time * 0.27), cos(time * 0.25), sin(time * 0.33));
-    centers[3] += 0.1 * vec3(cos(time * 0.31), sin(time * 0.23), cos(time * 0.27));
-    centers[4] += 0.1 * vec3(sin(time * 0.33), cos(time * 0.31), sin(time * 0.29));
+    // 各円の半径（少し変化させる）
+    radii[0] = 0.7 + 0.1 * sin(time * 0.2);
+    radii[1] = 0.65 + 0.1 * cos(time * 0.25);
+    radii[2] = 0.75 + 0.1 * sin(time * 0.22);
+    radii[3] = 0.7 + 0.1 * cos(time * 0.18);
+    radii[4] = 0.68 + 0.1 * sin(time * 0.23);
+    radii[5] = 0.72 + 0.1 * cos(time * 0.21);
+    radii[6] = 0.71 + 0.1 * sin(time * 0.24);
+    radii[7] = 0.69 + 0.1 * cos(time * 0.19);
+    radii[8] = 0.73 + 0.1 * sin(time * 0.26);
+    radii[9] = 0.67 + 0.1 * cos(time * 0.27);
     
-    // 正規化して単位球面上に戻す
-    for (int i = 0; i < 5; i++) {
-        centers[i] = normalize(centers[i]);
-    }
+    // 各円からの影響を計算
+    float result = 0.0;
+    float maxCircles = 10.0;
+    float circleCount = clamp(uCircleCount, 1.0, maxCircles); // floatで円の数を制限
     
-    // 各円の半径（時間とともに変化）
-    float radii[5];
-    radii[0] = 0.7 + 0.2 * sin(time * 0.21);
-    radii[1] = 0.65 + 0.15 * cos(time * 0.19);
-    radii[2] = 0.75 + 0.18 * sin(time * 0.17 + 1.0);
-    radii[3] = 0.68 + 0.22 * cos(time * 0.23 + 2.0);
-    radii[4] = 0.72 + 0.17 * sin(time * 0.25 + 3.0);
-    
-    // 各円の影響を計算
-    float circleInfluence = 0.0;
-    float blendFactor = 3.0; // ブレンド係数（高いほど滑らかに）
-    float totalWeight = 0.0;
-    
-    // 使用する円の数（uCircleCountに基づく）
-    int numCircles = int(min(5.0, max(2.0, uCircleCount * 0.5)));
-    
-    // 各円からの距離に基づく重み付け
-    for (int i = 0; i < 5; i++) {
-        if (i < numCircles) {
-            // 方向ベクトルと円の中心との距離
-            float dist = distance(direction, centers[i]);
+    // 円の数だけループ
+    for (int i = 0; i < 10; i++) {
+        // 現在のインデックスが使用する円の数より小さい場合のみ処理
+        if (float(i) < circleCount) {
+            // 方向ベクトルと円の中心とのドット積（-1から1の範囲）
+            float dotProduct = dot(direction, centers[i]);
             
-            // 円の半径に基づいて影響範囲を調整
-            float radiusEffect = radii[i] * 1.5;
+            // ドット積を0から1の範囲に変換し、円の影響を計算
+            // 1に近いほど円の中心に近い
+            float influence = 0.5 + 0.5 * dotProduct;
             
-            // 距離に基づく重み（近いほど影響大、半径が大きいほど影響範囲大）
-            float weight = radiusEffect / pow(dist + 0.3, blendFactor);
+            // 円の影響を半径に基づいて調整（滑らかな減衰）
+            // 中心から離れるほど影響が小さくなる
+            // uCornerSharpnessが小さいほど丸く、大きいほど尖る
+            influence = pow(influence, uCornerSharpness);
             
-            // 重みを累積
-            circleInfluence += weight;
-            totalWeight += weight;
+            // 複数の円の影響を合成（最大値を取る）
+            result = max(result, influence * radii[i]);
         }
     }
     
-    // 正規化された影響度
-    circleInfluence = circleInfluence / totalWeight;
-    
-    // 円の影響を半径に反映（滑らかな変形）
-    float circleEffect = 0.1 * circleInfluence;
-    
-    // 最終的な半径を計算
-    float radius = baseRadius + deformation + tension + circleEffect;
-    
-    return radius;
+    return result * 1.8; // 全体的なスケールを調整
 }
 
 void main() {
@@ -166,25 +134,28 @@ void main() {
     // 頂点の方向ベクトル（正規化）
     vec3 direction = normalize(position);
     
+    // 基本の半径（球体）
+    float baseRadius = 1.0;
+    
     // 時間スケールを適用
     float scaledTime = uTime * uTimeScale;
     
-    // 泡のような形状を作る
-    float bubbleRadius = bubbleShape(direction, scaledTime);
+    // 複数の円を重ね合わせた形状を作る
+    float circlesRadius = overlappingCircles(direction, scaledTime);
     
-    // ノイズを使って表面の微細な変形を適用
+    // ノイズを使って不規則な変形を適用（より滑らかに）
     float noiseScale = 0.8; // ノイズのスケール
     float timeScale = 0.15 * uTimeScale; // 時間の進行速度
-    float distortionAmount = uNoiseAmount * 0.3; // 変形の強さを抑える（泡は比較的滑らか）
+    float distortionAmount = uNoiseAmount; // 変形の強さ（パラメータ化）
     
-    // 時間とともに変化するノイズ値を計算
+    // 時間とともに変化するノイズ値を計算（滑らかなフラクタルノイズを使用）
     float noiseValue = smoothFractalNoise(direction * noiseScale + vec3(scaledTime * timeScale));
     
     // ノイズに基づいて半径を変化させる（より滑らかな変化に）
     float smoothedNoise = sin(noiseValue * 3.14159) * 0.5 + 0.5;
     
-    // 泡の形状にノイズを加える（微細な変形）
-    float radius = bubbleRadius * (1.0 + distortionAmount * smoothedNoise);
+    // 円の形状にノイズを加える
+    float radius = circlesRadius * (1.0 + distortionAmount * smoothedNoise);
     
     // 変形した位置を計算
     vec3 distortedPosition = direction * radius;
@@ -208,9 +179,9 @@ void main() {
     vec3 nearbyX = normalize(direction + epsilon * tangentX);
     vec3 nearbyY = normalize(direction + epsilon * tangentY);
     
-    // 近傍点での泡の形状を計算
-    float bubbleRadiusX = bubbleShape(nearbyX, scaledTime);
-    float bubbleRadiusY = bubbleShape(nearbyY, scaledTime);
+    // 近傍点での円の形状を計算
+    float circlesRadiusX = overlappingCircles(nearbyX, scaledTime);
+    float circlesRadiusY = overlappingCircles(nearbyY, scaledTime);
     
     // 近傍点でのノイズ値を計算
     float noiseX = smoothFractalNoise(nearbyX * noiseScale + vec3(scaledTime * timeScale));
@@ -219,8 +190,8 @@ void main() {
     // 近傍点での半径を計算
     float smoothedNoiseX = sin(noiseX * 3.14159) * 0.5 + 0.5;
     float smoothedNoiseY = sin(noiseY * 3.14159) * 0.5 + 0.5;
-    float radiusX = bubbleRadiusX * (1.0 + distortionAmount * smoothedNoiseX);
-    float radiusY = bubbleRadiusY * (1.0 + distortionAmount * smoothedNoiseY);
+    float radiusX = circlesRadiusX * (1.0 + distortionAmount * smoothedNoiseX);
+    float radiusY = circlesRadiusY * (1.0 + distortionAmount * smoothedNoiseY);
     
     // 近傍点の位置を計算
     vec3 posX = nearbyX * radiusX;
@@ -232,9 +203,6 @@ void main() {
     
     // 法線ベクトルを接線ベクトルの外積として計算
     vec3 normal = normalize(cross(tangentVecX, tangentVecY));
-    
-    // モデルビュー行列を適用した位置をフラグメントシェーダーに渡す
-    vPosition = (uModelViewMatrix * vec4(distortedPosition, 1.0)).xyz;
     
     // 法線ベクトルを正規化してvNormalに代入
     vNormal = normalize(uNormalMatrix * normal);

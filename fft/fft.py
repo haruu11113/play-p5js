@@ -1,75 +1,67 @@
 import numpy as np
 from PIL import Image
+import json
 
-def compute_fft_coeffs(image_path, num_coeffs=None):
-    """
-    1. 画像をグレースケールで読み込み
-    2. 2D FFT を実行
-    3. 振幅スペクトルと位相スペクトルを取得
-    4. 大きい振幅から上位 num_coeffs 個（省略時は全て）を抽出
-    5. 各成分の (kx, ky), amplitude, phase を返す
-    """
-    # 画像を読み込み、グレースケール → float32 の numpy 配列
-    img = Image.open(image_path).convert('L')
-    f = np.array(img, dtype=np.float32)
+def compute_fft_coeffs_gray(f, num_coeffs):
+    """入力 f: 2D numpy(float32) → 上位 num_coeffs 成分を返す"""
     h, w = f.shape
+    F     = np.fft.fft2(f)
+    F2    = np.fft.fftshift(F)
+    kx    = np.fft.fftshift(np.fft.fftfreq(w))
+    ky    = np.fft.fftshift(np.fft.fftfreq(h))
+    KX, KY= np.meshgrid(kx, ky)
 
-    # 2D FFT
-    F = np.fft.fft2(f)
-    F_shift = np.fft.fftshift(F)
+    amp   = np.abs(F2) / (h * w)
+    ph    = np.angle(F2)
 
-    # 周波数軸の生成
-    kx = np.fft.fftshift(np.fft.fftfreq(w))  # 横方向周波数
-    ky = np.fft.fftshift(np.fft.fftfreq(h))  # 縦方向周波数
-    KX, KY = np.meshgrid(kx, ky)
+    flat_amp  = amp.flatten()
+    flat_ph   = ph.flatten()
+    flat_kx   = KX.flatten()
+    flat_ky   = KY.flatten()
 
-    # 振幅と位相
-    amplitude = np.abs(F_shift) / (h * w)   # 正規化
-    phase     = np.angle(F_shift)
+    idxs = np.argsort(flat_amp)[::-1]
+    if num_coeffs:
+        idxs = idxs[:num_coeffs]
 
-    # フラット化してソート（振幅が大きい順）
-    amps_flat  = amplitude.flatten()
-    phs_flat   = phase.flatten()
-    kx_flat    = KX.flatten()
-    ky_flat    = KY.flatten()
-    idx_sorted = np.argsort(amps_flat)[::-1]
-
-    # 抽出数を指定
-    if num_coeffs is not None:
-        idx_sorted = idx_sorted[:num_coeffs]
-
-    # 上位成分をリスト化
     coeffs = []
-    for idx in idx_sorted:
+    for i in idxs:
         coeffs.append({
-            'kx': float(kx_flat[idx]),
-            'ky': float(ky_flat[idx]),
-            'amplitude': float(amps_flat[idx]),
-            'phase': float(phs_flat[idx])
+            'kx': float(flat_kx[i]),
+            'ky': float(flat_ky[i]),
+            'amplitude': float(flat_amp[i]),
+            'phase': float(flat_ph[i])
         })
+    return coeffs
+
+def compute_fft_coeffs_color(image_path, num_coeffs=None):
+    """
+    1. 画像をRGBで読み込み
+    2. 各チャンネルごとに FFT → 上位 num_coeffs を抽出
+    3. JSON 用 dict で返す
+    """
+    img = Image.open(image_path).convert('RGB')
+    arr = np.array(img, dtype=np.float32)
+    h, w, _ = arr.shape
+
+    # 各チャンネル分
+    coeffs_r = compute_fft_coeffs_gray(arr[:, :, 0], num_coeffs)
+    coeffs_g = compute_fft_coeffs_gray(arr[:, :, 1], num_coeffs)
+    coeffs_b = compute_fft_coeffs_gray(arr[:, :, 2], num_coeffs)
 
     return {
-        'shape': (h, w),
-        'coeffs': coeffs
+        'shape': [h, w],
+        'r': coeffs_r,
+        'g': coeffs_g,
+        'b': coeffs_b
     }
 
-import json
-# サンプル実行
 if __name__ == '__main__':
-    N_COEFFS = 1000000
-    print(f"{N_COEFFS=}")
-    result = compute_fft_coeffs('./image.png', num_coeffs=N_COEFFS)
-    data = {
-        'shape': result['shape'],   # [height, width]
-        'list': result['coeffs']    # {kx, ky, amplitude, phase} のリスト
-    }
+    IMAGE_PATH = './image.png'
+    N_COEFFS    = 10000  # お好みで増減
+    out = compute_fft_coeffs_color(IMAGE_PATH, num_coeffs=N_COEFFS)
 
     # JSON ファイルに保存
-    with open('coeffs.json', 'w') as fp:
-        json.dump(data, fp, indent=2)
-    print("coeffs.json に保存しました。")
+    with open('coeffs_color.json', 'w') as fp:
+        json.dump(out, fp, indent=2)
 
-    print(f"Image size: {result['shape'][0]}×{result['shape'][1]}")
-    print("Top 5 frequency components:")
-    for comp in result['coeffs'][:5]:
-        print(comp)
+    print(f"coeffs_color.json に保存しました: {out['shape'][0]}×{out['shape'][1]}, 各チャンネル {N_COEFFS} 成分ずつ")

@@ -3,6 +3,8 @@ precision mediump float;
 // 頂点シェーダーから受け取る法線ベクトル
 varying vec3 vNormal;
 uniform float uTime; // 時間を受け取るユニフォーム
+uniform vec3 uAcceleration; // 加速度センサーデータ
+uniform float uIntensity; // 動きの激しさ
 
 // 乱数生成関数
 float random(vec2 st) {
@@ -49,9 +51,11 @@ void main() {
     edge = pow(edge, 2.0); // エッジをより鮮明に
     
     // HSVカラースペースでの色相を計算
-    float hue = 0.7 + 0.3 * noiseValue + 0.1 * sin(uTime * 0.5); // 青〜紫の範囲で変化
-    float saturation = 0.6 + 0.4 * edge; // エッジで彩度を上げる
-    float value = 0.7 + 0.3 * normalColor.y; // 明度は法線のY成分に基づく
+    // 動きの激しさによって色相を調整（青から赤へ）
+    float baseHue = 0.7 - uIntensity * 0.5; // 激しい動きで赤くなる
+    float hue = baseHue + 0.3 * noiseValue + 0.1 * sin(uTime * 0.5);
+    float saturation = 0.6 + 0.4 * edge + uIntensity * 0.3; // 激しい動きで彩度を上げる
+    float value = 0.7 + 0.3 * normalColor.y + uIntensity * 0.2; // 激しい動きで明度を上げる
     
     // HSVからRGBに変換
     vec3 color = hsv2rgb(vec3(hue, saturation, value));
@@ -59,9 +63,12 @@ void main() {
     // エッジに基づいて色を調整（エッジを強調）
     color = mix(color, vec3(1.0), edge * 0.5);
     
-    // 時間に基づく脈動効果を追加
-    float pulse = 0.05 * sin(uTime * 2.0);
-    color += pulse * vec3(0.5, 0.0, 0.5); // 紫色の脈動
+    // 時間と動きの激しさに基づく脈動効果を追加
+    float pulseIntensity = 0.05 + uIntensity * 0.1; // 激しい動きで脈動を強く
+    float pulse = pulseIntensity * sin(uTime * (2.0 + uIntensity * 3.0));
+    // 激しい動きで赤い色を追加
+    vec3 pulseColor = mix(vec3(0.5, 0.0, 0.5), vec3(1.0, 0.2, 0.0), uIntensity);
+    color += pulse * pulseColor;
     
     // 計算した色をフラグメントの色として設定
     gl_FragColor = vec4(color, 1.0);

@@ -9,6 +9,8 @@ uniform mat4 uModelViewMatrix;
 uniform mat4 uProjectionMatrix;
 uniform mat3 uNormalMatrix;
 uniform float uTime; // 時間を受け取るユニフォーム
+uniform vec3 uAcceleration; // 加速度センサーデータ
+uniform float uIntensity; // 動きの激しさ
 
 // フラグメントシェーダーに渡すための変数
 varying vec3 vNormal;
@@ -70,12 +72,14 @@ void main() {
     vec3 direction = normalize(position);
     
     // ノイズを使って不規則な変形を適用（より滑らかに）
-    float noiseScale = 0.8; // ノイズのスケールを調整（小さくして滑らかに）
-    float timeScale = 0.2; // 時間の進行速度
-    float distortionAmount = 0.6; // 変形の強さ（角を減らすために少し弱める）
+    float noiseScale = 0.8 + uIntensity * 0.5; // ノイズのスケールを動きの激しさで調整
+    float timeScale = 0.2 + uIntensity * 0.3; // 時間の進行速度を動きの激しさで調整
+    float distortionAmount = 0.6 + uIntensity * 0.8; // 変形の強さを動きの激しさで調整
     
     // 時間とともに変化するノイズ値を計算（滑らかなフラクタルノイズを使用）
-    float noiseValue = smoothFractalNoise(direction * noiseScale + vec3(uTime * timeScale));
+    // 加速度データを使ってノイズのオフセットを追加
+    vec3 noiseOffset = uAcceleration * 0.1;
+    float noiseValue = smoothFractalNoise(direction * noiseScale + vec3(uTime * timeScale) + noiseOffset);
     
     // 基本の半径（球体）
     float baseRadius = 1.0;

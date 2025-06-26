@@ -1,6 +1,7 @@
 let xData = [];
 let yData = [];
 let zData = [];
+let hrData = [];
 const maxDataLength = 100; // Keep the last 100 data points
 
 console.log("Connecting to WebSocket server...");
@@ -20,21 +21,30 @@ ws.onerror = function(error) {
 
 ws.onmessage = function(event) {
   try {
-    const receivedData = JSON.parse(event.data);
-    if (receivedData && typeof receivedData.x !== 'undefined' && typeof receivedData.y !== 'undefined' && typeof receivedData.z !== 'undefined') {
-      xData.push(receivedData.x);
-      yData.push(receivedData.y);
-      zData.push(receivedData.z);
+    const parsedData = JSON.parse(event.data);
+    const type = parsedData.type;
+    console.log("Parsed type:", type, "Parsed data:", parsedData); // Updated for debugging
+
+    if (type === 'user-acc') {
+      xData.push(parsedData.x);
+      yData.push(parsedData.y);
+      zData.push(parsedData.z);
 
       if (xData.length > maxDataLength) {
         xData.shift();
         yData.shift();
         zData.shift();
       }
+    } else if (type === 'heart_rate') {
+      hrData.push(parsedData.value);
+      if (hrData.length > maxDataLength) {
+        hrData.shift();
+      }
     }
   } catch (e) {
-    console.error("Error parsing JSON:", e);
+    console.error("Error parsing data:", e, "Received data:", event.data);
   }
+  console.log("xData length:", xData.length, "yData length:", yData.length, "zData length:", zData.length, "hrData length:", hrData.length);
 };
 
 function setup() {
@@ -50,7 +60,7 @@ function draw() {
   let minVal = -1;
   let maxVal = 1;
   
-  const allData = [...xData, ...yData, ...zData];
+  const allData = [...xData, ...yData, ...zData, ...hrData];
   if (allData.length > 0) {
       minVal = Math.min(...allData);
       maxVal = Math.max(...allData);
@@ -66,6 +76,7 @@ function draw() {
       minVal -= padding;
       maxVal += padding;
   }
+  console.log("minVal:", minVal, "maxVal:", maxVal);
 
   // Draw X data (red)
   stroke(255, 0, 0);
@@ -93,6 +104,16 @@ function draw() {
   for (let i = 0; i < zData.length; i++) {
     const x = map(i, 0, maxDataLength - 1, 0, width);
     const y = map(zData[i], minVal, maxVal, height, 0);
+    vertex(x, y);
+  }
+  endShape();
+
+  // Draw Heart Rate data (yellow)
+  stroke(255, 255, 0);
+  beginShape();
+  for (let i = 0; i < hrData.length; i++) {
+    const x = map(i, 0, maxDataLength - 1, 0, width);
+    const y = map(hrData[i], minVal, maxVal, height, 0);
     vertex(x, y);
   }
   endShape();

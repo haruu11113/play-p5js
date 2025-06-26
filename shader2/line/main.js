@@ -76,7 +76,7 @@ function draw() {
       minVal -= padding;
       maxVal += padding;
   }
-  console.log("minVal:", minVal, "maxVal:", maxVal);
+
 
   // Draw X data (red)
   stroke(255, 0, 0);

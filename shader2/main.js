@@ -33,7 +33,6 @@ function connectWebSocket() {
   ws.onmessage = function(event) {
     try {
       const data = JSON.parse(event.data);
-      console.log('受信データ:', data);
       if (data.type && data.type.includes('acc')) {
         // 前回の値を保存
         previousSensorData = { ...sensorData };
@@ -47,8 +46,6 @@ function connectWebSocket() {
         
         // 動きの激しさを計算
         calculateIntensity();
-        
-        console.log('センサーデータ更新:', sensorData, '激しさ:', intensity);
       }
     } catch (error) {
       console.error('センサーデータの解析エラー:', error);
@@ -89,30 +86,25 @@ function calculateIntensity() {
 }
 
 function draw() {
-  // 背景を黒に設定
   background(0);
   
-  // 経過時間を計算（秒単位）
   let elapsedTime = (millis() - startTime) / 1000.0;
   
-  // シェーダーに時間とセンサーデータを渡す
   normalShader.setUniform('uTime', elapsedTime);
   normalShader.setUniform('uAcceleration', [sensorData.x, sensorData.y, sensorData.z]);
   normalShader.setUniform('uIntensity', intensity);
   
-  // 中心に移動
+
   translate(0, 0, 0);
   
-  // センサーデータに基づいて回転を制御
   rotateY(frameCount * 0.01 + sensorData.x * 0.1);
   rotateX(frameCount * 0.01 + sensorData.y * 0.1);
   rotateZ(sensorData.z * 0.05);
   
-  // 不規則な形状を描画するための球体（シェーダーで変形される）
   sphere(200);
 }
 
-// ウィンドウサイズが変更されたときにキャンバスをリサイズ
+
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }

@@ -1,77 +1,219 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+let scene, camera, renderer, points;
+let geometry, positions, targetPositions, speeds, colors, sizes;
 
-const particles = [];
-const text = 'Hello, World!';
-const fontSize = Math.min(canvas.width / text.length * 0.8, canvas.height * 0.3);
 
-ctx.font = `bold ${fontSize}px Arial`;
-ctx.fillStyle = 'white';
-ctx.textAlign = 'center';
-ctx.textBaseline = 'middle';
-ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+/**
+ * 初期化処理をまとめて実行する関数。
+ * シーン・カメラ・レンダラー・パーティクルなどを初期化。
+ */
+const init = () => {
+    /**
+     * three.jsのシーン・カメラ・レンダラーを初期化する。
+     */
+    const initScene = () => {
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.position.z = 500;
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.autoClear = false;
+        document.body.appendChild(renderer.domElement);
+    };
+    initScene();
 
-const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+    /**
+     * ウィンドウリサイズ時にカメラとレンダラーのサイズを更新する。
+     */
+    const onWindowResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    // ウィンドウリサイズ時のイベントハンドラを登録する。
+    window.addEventListener("resize", onWindowResize);
+};
+init();
 
-class Particle {
-    constructor(x, y, targetX, targetY) {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2 + 1;
-        this.targetX = targetX;
-        this.targetY = targetY;
-        this.speed = Math.random() * 0.02 + 0.01;
-        this.velocityX = 0;
-        this.velocityY = 0;
-        this.color = `hsl(${Math.random() * 60 + 200}, 100%, 50%)`;
-    }
 
-    update() {
-        this.velocityX = (this.targetX - this.x) * this.speed;
-        this.velocityY = (this.targetY - this.y) * this.speed;
-        this.x += this.velocityX;
-        this.y += this.velocityY;
-    }
+/** ---------------------------------
+ * 設計方針
+ * 1. パーティクルの初期位置・色・速度などの配列を初期化し、geometryを生成する。
+ * 2. パーティクル用のPointsMaterialを生成する。
+ * 3. パーティクルをシーンに追加する。
+ * 4. アニメーションループを実行する。
+ * 5. パーティクルの現在位置をターゲット位置へ補間して更新する。
+ * 6. パーティクルを描画する。
+ * ---------------------------------*/
 
-    draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-    }
-}
 
-function init() {
-    for (let y = 0; y < imageData.height; y += 5) {
-        for (let x = 0; x < imageData.width; x += 5) {
-            if (imageData.data[(y * imageData.width + x) * 4 + 3] > 128) {
-                particles.push(new Particle(x, y, x, y));
+/**
+ * パーティクル(点)の形状を整形
+ * @returns {THREE.CanvasTexture} 円形スプライトのテクスチャ
+ */
+const createSpriteTexture = () => {
+    const spriteCanvas = document.createElement("canvas");
+    spriteCanvas.width = 64;
+    spriteCanvas.height = 64;
+    const sc = spriteCanvas.getContext("2d");
+    sc.fillStyle = "white";
+    sc.beginPath();
+    // x座標, y座標, 半径, 開始角度, 終了角度
+    sc.arc(32, 32, 30, 0, Math.PI * 2);
+    sc.fill();
+    return new THREE.CanvasTexture(spriteCanvas);
+};
+const spriteTexture = createSpriteTexture();
+console.log(spriteTexture);
+
+
+/**
+ * テキストの輪郭をcanvasで描画し、パーティクル配置用の座標配列を生成する。
+ * @returns {{ pointsArr: number[] }} テキスト輪郭上の点座標配列
+ */
+const createTextOutlineCanvas = () => {
+    const textCanvas = document.createElement("canvas");
+    textCanvas.width = 1024;
+    textCanvas.height = 256;
+    const ctx2 = textCanvas.getContext("2d");
+    const text = "Hi";
+    const fontSize = Math.min(
+        (textCanvas.width / text.length) * 1.0,
+        textCanvas.height * 1.0
+    );
+    ctx2.fillStyle = "white";
+    ctx2.font = `bold ${fontSize}px Arial`;
+    ctx2.textAlign = "center";
+    ctx2.textBaseline = "middle";
+    ctx2.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+    const imgData = ctx2.getImageData(
+        0,
+        0,
+        textCanvas.width,
+        textCanvas.height
+    ).data;
+    const pointsArr = [];
+    for (let y = 0; y < textCanvas.height; y += 3) {
+        for (let x = 0; x < textCanvas.width; x += 3) {
+            if (imgData[(y * textCanvas.width + x) * 4 + 3] > 128) {
+                const vx = x - textCanvas.width / 2;
+                const vy = textCanvas.height / 2 - y;
+                pointsArr.push(vx, vy, 0);
             }
         }
     }
-}
+    return { pointsArr };
+};
+const { pointsArr } = createTextOutlineCanvas();
 
-function animate() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    particles.forEach(particle => {
-        particle.update();
-        particle.draw();
+/**
+ * パーティクルの初期位置・色・速度などの配列を初期化し、geometryを生成する。
+ * @param {number[]} pointsArr - パーティクルのターゲット座標配列
+ */
+const initParticleData = (pointsArr) => {
+    const count = pointsArr.length / 3;
+    targetPositions = new Float32Array(pointsArr);
+    positions = new Float32Array(pointsArr.length);
+    speeds = new Float32Array(count);
+    colors = new Float32Array(count * 3);
+    sizes = new Float32Array(count);
+    const base = new THREE.Color(0x00aaff);
+    const hsl = {};
+    base.getHSL(hsl);
+    for (let i = 0; i < count; i++) {
+        // 位置調整
+        positions[3 * i] = (Math.random() - 0.5) * window.innerWidth; // 位置調整
+        positions[3 * i + 1] = (Math.random() - 0.5) * window.innerHeight; // 位置調整
+        positions[3 * i + 2] = (Math.random() - 0.5) * 500; // 高さ調整
+
+        // 速度調整
+        speeds[i] = Math.random() * 0.02 + 0.02; // 速度調整
+
+        // 色調整 (h:色相, s:彩度, l:明度)
+        const h = hsl.h + (Math.random() - 0.5) * 0.1;
+        const s = THREE.MathUtils.clamp(
+            hsl.s + (Math.random() - 0.5) * 0.3,
+            0,
+            1
+        );
+        const l = THREE.MathUtils.clamp(
+            hsl.l + (Math.random() - 0.5) * 0.3,
+            0,
+            1
+        );
+        const c = new THREE.Color().setHSL(h, s, l);
+        colors[3 * i] = c.r;
+        colors[3 * i + 1] = c.g;
+        colors[3 * i + 2] = c.b;
+
+        // サイズ調整
+        sizes[i] = Math.random() * 12 + 2;
+    }
+
+    geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+};
+initParticleData(pointsArr);
+
+
+/**
+ * パーティクル用のPointsMaterialを生成する。
+ * mapを使い、文字(spriteTexture)の形状
+ * @param {THREE.Texture} spriteTexture - パーティクルのスプライトテクスチャ
+ * @returns {THREE.PointsMaterial} PointsMaterialインスタンス
+ */
+const createPointsMaterial = (spriteTexture) => {
+    return new THREE.PointsMaterial({
+        size: 3, // 点サイズを小さく
+        map: spriteTexture,
+        transparent: true,
+        alphaTest: 0.3,
+        vertexColors: true,
+        blending: THREE.AdditiveBlending,
+        depthTest: false,
+        depthWrite: false,
     });
+};
+const material = createPointsMaterial(spriteTexture);
 
-    requestAnimationFrame(animate);
-}
 
-init();
+// パーティクルをシーンに追加
+points = new THREE.Points(geometry, material);
+scene.add(points);
+
+
+/**
+ * アニメーションループ。パーティクルの更新と描画を行う。
+ */
+const animate = () => {
+    requestAnimationFrame(animate); // アニメーションループ
+    // renderer.clearDepth(); // 深度バッファをクリア
+
+    /**
+     * パーティクルの現在位置をターゲット位置へ補間して更新する。
+     */
+    const updateParticles = () => {
+        const pos = geometry.attributes.position.array;
+        for (let i = 0, idx = 0; i < pos.length; i += 3, idx++) {
+            const sp = speeds[idx];
+            pos[i] += (targetPositions[i] - pos[i]) * sp;
+            pos[i + 1] += (targetPositions[i + 1] - pos[i + 1]) * sp;
+            pos[i + 2] += (targetPositions[i + 2] - pos[i + 2]) * sp;
+        }
+    };
+    updateParticles();
+
+    // パーティクルの位置を更新
+    geometry.attributes.position.needsUpdate = true;
+    renderer.render(scene, camera); // 描画
+};
 animate();
-
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});

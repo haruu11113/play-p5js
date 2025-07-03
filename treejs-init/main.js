@@ -83,6 +83,11 @@ for (let i = 0; i < 5000; i++) {
     // const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1);
     // const material = new THREE.MeshBasicMaterial({ color: Math.random() * 0xffffff });
     const geometry = new THREE.SphereGeometry(Math.random() * 0.01, 32, 32); // ball
+    // const geometry = new THREE.TextGeometry(`あ`, {
+    //     font: font, // フォントを指定 (FontLoaderで読み込んだjson形式のフォント)
+    //     size: 10,   // 文字のサイズを指定
+    //     height: 1,  // 文字の厚さを指定
+    // })
     const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const box = new THREE.Mesh(geometry, material);
 

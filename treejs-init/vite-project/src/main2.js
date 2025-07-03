@@ -82,7 +82,7 @@ const createTextOutlineCanvas = () => {
     textCanvas.width = 1024;
     textCanvas.height = 256;
     const ctx2 = textCanvas.getContext("2d");
-    const text = "Hi";
+    const text = "あ"; //"Hi";
     const fontSize = Math.min(
         (textCanvas.width / text.length) * 1.0,
         textCanvas.height * 1.0

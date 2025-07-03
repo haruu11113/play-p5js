@@ -97,8 +97,8 @@ function animate() {
         addX[i] += mouseVelocityX * 0.01;
         addY[i] += mouseVelocityY * 0.01;
 
-        addX[i] *= 0.998; // 徐々に減衰
-        addY[i] *= 0.998; // 徐々に減衰
+        addX[i] *= 0.999; // 徐々に減衰
+        addY[i] *= 0.999; // 徐々に減衰
 
         box.position.x += addX[i];
         box.position.y += addY[i];
@@ -109,13 +109,13 @@ function animate() {
 
 // フォントの読み込みと文字の生成
 const fontLoader = new FontLoader();
-const font = await fontLoader.loadAsync(`/fonts/droid_sans_mono_regular.typeface.json`);
+const font = await fontLoader.loadAsync(`/fonts/ZenKakuGothicNew_Regular.json`);
 
 var boxes = new THREE.Group();
-for (let i = 0; i < 1000; i++) {
-    const geometry = new TextGeometry(`Q`, {
+for (let i = 0; i < 100; i++) {
+    const geometry = new TextGeometry(`あ`, {
         font: font,
-        size: 14 * (Math.random() + 0.5),
+        size: 18 * (Math.random() + 0.9),
         depth: 0,
     });
     const material = new THREE.MeshBasicMaterial();
@@ -135,9 +135,9 @@ let addX = [];
 let addY = [];
 let addZ = [];
 for (let i = 0; i < boxes.children.length; i++) {
-    addX[i] = (Math.random() - 0.5) * 0.03;
-    addY[i] = (Math.random() - 0.5) * 0.03;
-    addZ[i] = (Math.random() - 0.5) * 0.03;
+    addX[i] = (Math.random() - 0.5) * 0.07;
+    addY[i] = (Math.random() - 0.5) * 0.07;
+    addZ[i] = (Math.random() - 0.5) * 0.07;
 }
 
 animate();

@@ -1,4 +1,4 @@
-import * as THREE from "three";
+// import * as THREE from "three";
 
 let scene, camera, renderer, points;
 let geometry, positions, targetPositions, speeds, colors, sizes;
@@ -13,6 +13,7 @@ const init = () => {
      * three.jsのシーン・カメラ・レンダラーを初期化する。
      */
     const initScene = () => {
+        let canvasContainer = document.getElementById('canvas');
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(
             75,
@@ -24,7 +25,7 @@ const init = () => {
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.autoClear = false;
-        document.body.appendChild(renderer.domElement);
+        canvasContainer.appendChild(renderer.domElement);
     };
     initScene();
 
@@ -32,9 +33,10 @@ const init = () => {
      * ウィンドウリサイズ時にカメラとレンダラーのサイズを更新する。
      */
     const onWindowResize = () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
+        let canvasContainer = document.getElementById('canvas');
+        camera.aspect = canvasContainer.innerWidth / canvasContainer.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(canvasContainer.innerWidth, canvasContainer.innerHeight);
     };
     // ウィンドウリサイズ時のイベントハンドラを登録する。
     window.addEventListener("resize", onWindowResize);
@@ -70,19 +72,18 @@ const createSpriteTexture = () => {
     return new THREE.CanvasTexture(spriteCanvas);
 };
 const spriteTexture = createSpriteTexture();
-console.log(spriteTexture);
 
 
 /**
  * テキストの輪郭をcanvasで描画し、パーティクル配置用の座標配列を生成する。
+ * @param {string} text - 表示するテキスト
  * @returns {{ pointsArr: number[] }} テキスト輪郭上の点座標配列
  */
-const createTextOutlineCanvas = () => {
-    const textCanvas = document.createElement("canvas");
+const createTextOutlineCanvas = (text) => {
+    const textCanvas = document.createElement('canvas');
     textCanvas.width = 1024;
     textCanvas.height = 256;
     const ctx2 = textCanvas.getContext("2d");
-    const text = "あ"; //"Hi";
     const fontSize = Math.min(
         (textCanvas.width / text.length) * 1.0,
         textCanvas.height * 1.0
@@ -110,7 +111,7 @@ const createTextOutlineCanvas = () => {
     }
     return { pointsArr };
 };
-const { pointsArr } = createTextOutlineCanvas();
+const { pointsArr } = createTextOutlineCanvas(`あ`);
 
 
 /**
@@ -134,7 +135,7 @@ const initParticleData = (pointsArr) => {
         positions[3 * i + 2] = (Math.random() - 0.5) * 500; // 高さ調整
 
         // 速度調整
-        speeds[i] = Math.random() * 0.02 + 0.02; // 速度調整
+        speeds[i] = Math.random() * 0.02 + 0.03; // 速度調整
 
         // 色調整 (h:色相, s:彩度, l:明度)
         const h = hsl.h + (Math.random() - 0.5) * 0.1;
@@ -191,6 +192,9 @@ points = new THREE.Points(geometry, material);
 scene.add(points);
 
 
+let hasArrived = false; // グローバルで一度だけログを出すためのフラグ
+
+
 /**
  * アニメーションループ。パーティクルの更新と描画を行う。
  */
@@ -211,6 +215,31 @@ const animate = () => {
         }
     };
     updateParticles();
+
+    // ここから到達判定
+    if (!hasArrived) {
+        let allArrived = true;
+        const pos = geometry.attributes.position.array;
+        for (let i = 0; i < pos.length; i += 3) {
+            const dx = targetPositions[i] - pos[i];
+            const dy = targetPositions[i + 1] - pos[i + 1];
+            const dz = targetPositions[i + 2] - pos[i + 2];
+            const distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq > 1) { // 1ピクセル未満なら到達とみなす
+                allArrived = false;
+                break;
+            }
+        }
+        if (allArrived) {
+            hasArrived = true;
+            console.log("全パーティクルが所定の位置に到達しました");
+            // 画面スクロール
+            window.scrollTo({
+                top: document.getElementById("home").offsetTop,
+                behavior: "smooth"
+            });
+        }
+    }
 
     // パーティクルの位置を更新
     geometry.attributes.position.needsUpdate = true;

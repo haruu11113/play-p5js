@@ -41,7 +41,8 @@ function init() {
     window.addEventListener('resize', onWindowResize, false);
 }
 
-/* アニメーションループを作成 requestAnimationFrameを使用して、ブラウザのリフレッシュレートに合わせてアニメーションを更新 */ function animate() {
+/* アニメーションループを作成 requestAnimationFrameを使用して、ブラウザのリフレッシュレートに合わせてアニメーションを更新 */
+function animate() {
     requestAnimationFrame(animate);
 
     for (let i = 0; i < boxes.children.length; i++) {

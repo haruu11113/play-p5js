@@ -1,7 +1,14 @@
-// import * as THREE from "three";
+// // import * as THREE from "three";
 
 let scene, camera, renderer, points;
 let geometry, positions, targetPositions, speeds, colors, sizes;
+
+// マウスの位置と速度を保存する変数
+let prevMouseX = 0;
+let prevMouseY = 0;
+let mouseVelocityX = 0;
+let mouseVelocityY = 0;
+
 
 
 /**
@@ -40,6 +47,37 @@ const init = () => {
     };
     // ウィンドウリサイズ時のイベントハンドラを登録する。
     window.addEventListener("resize", onWindowResize);
+
+    /**
+     * マウス移動時にマウスの位置と速度を計算する。
+     */
+    const onMouseMove = (event) => {
+        // マウス座標をワールド座標に変換
+        const vector = new THREE.Vector3(
+            (event.clientX / window.innerWidth) * 2 - 1,
+            - (event.clientY / window.innerHeight) * 2 + 1,
+            0.5
+        );
+        vector.unproject(camera);
+        const dir = vector.sub(camera.position).normalize();
+        const distance = -camera.position.z / dir.z;
+        const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+
+        // 最初のマウス移動では、速度を計算せずに現在位置を保存
+        if (prevMouseX === 0 && prevMouseY === 0) {
+            prevMouseX = pos.x;
+            prevMouseY = pos.y;
+        }
+
+        // マウスの移動速度を計算
+        mouseVelocityX = pos.x - prevMouseX;
+        mouseVelocityY = pos.y - prevMouseY;
+
+        // 現在のマウス位置を保存
+        prevMouseX = pos.x;
+        prevMouseY = pos.y;
+    }
+    window.addEventListener('mousemove', onMouseMove, false);
 };
 init();
 
@@ -209,6 +247,17 @@ const animate = () => {
         const pos = geometry.attributes.position.array;
         for (let i = 0, idx = 0; i < pos.length; i += 3, idx++) {
             const sp = speeds[idx];
+            // mouseVelocityX, mouseVelocityYを使って、パーティクルの位置を更新
+            // pos[i] とmouseの距離を計算
+            let distane = Math.sqrt(
+                (pos[i] - prevMouseX) ** 2 + (pos[i + 1] - prevMouseY) ** 2
+            );
+            // distanceが100未満なら、避けるように移動させる
+            if (distane < 20) {
+                // 近づきすぎたら、反発するように移動
+                pos[i] += (pos[i] - prevMouseX) * 0.1;
+                pos[i + 1] += (pos[i + 1] - prevMouseY) * 0.1;
+            }
             pos[i] += (targetPositions[i] - pos[i]) * sp;
             pos[i + 1] += (targetPositions[i + 1] - pos[i + 1]) * sp;
             pos[i + 2] += (targetPositions[i + 2] - pos[i + 2]) * sp;
@@ -234,10 +283,10 @@ const animate = () => {
             hasArrived = true;
             console.log("全パーティクルが所定の位置に到達しました");
             // 画面スクロール
-            window.scrollTo({
-                top: document.getElementById("home").offsetTop,
-                behavior: "smooth"
-            });
+            // window.scrollTo({
+            //     top: document.getElementById("home").offsetTop,
+            //     behavior: "smooth"
+            // });
         }
     }
 

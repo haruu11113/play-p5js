@@ -247,17 +247,18 @@ const animate = () => {
         const pos = geometry.attributes.position.array;
         for (let i = 0, idx = 0; i < pos.length; i += 3, idx++) {
             const sp = speeds[idx];
-            // mouseVelocityX, mouseVelocityYを使って、パーティクルの位置を更新
-            // pos[i] とmouseの距離を計算
+
+            // mouseの周辺をパーティクルが避けるようにする
+            // ターゲット位置を取得
             let distane = Math.sqrt(
                 (pos[i] - prevMouseX) ** 2 + (pos[i + 1] - prevMouseY) ** 2
             );
-            // distanceが100未満なら、避けるように移動させる
             if (distane < 20) {
-                // 近づきすぎたら、反発するように移動
-                pos[i] += (pos[i] - prevMouseX) * 0.1;
-                pos[i + 1] += (pos[i + 1] - prevMouseY) * 0.1;
+                pos[i] += (pos[i] - prevMouseX) * (Math.random() + 0.5) ;
+                pos[i + 1] += (pos[i + 1] - prevMouseY) * (Math.random() + 0.8);
             }
+
+            // ターゲット位置へ補間
             pos[i] += (targetPositions[i] - pos[i]) * sp;
             pos[i + 1] += (targetPositions[i + 1] - pos[i + 1]) * sp;
             pos[i + 2] += (targetPositions[i + 2] - pos[i + 2]) * sp;

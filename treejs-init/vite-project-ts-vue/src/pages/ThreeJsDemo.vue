@@ -39,9 +39,6 @@ let hasArrived = false;
 let prevMouseX = null;
 let prevMouseY = null;
 
-// テキスト輪郭から得たパーティクルの座標
-const { pointsArr } = createTextOutlineCanvas("あ");
-
 // onMountedライフサイクルで初期化
 onMounted(() => {
   init();
@@ -55,8 +52,11 @@ onUnmounted(() => {
   window.removeEventListener("mousemove", onMouseMove);
 });
 
-// 初期化関数
-function init() {
+/**
+ * 初期化関数
+ * シーン、カメラ、レンダラーのセットアップとパーティクルデータの初期化を行う
+ */
+const init = () => {
   // Scene, Camera, Rendererのセットアップ
   scene = new Scene();
   camera = new PerspectiveCamera(
@@ -82,19 +82,25 @@ function init() {
   const material = createPointsMaterial(createSpriteTexture());
   points = new Points(geometry, material);
   scene.add(points);
-}
+};
 
-// リサイズハンドラ
-function onWindowResize() {
+/**
+ * ウィンドウリサイズハンドラ
+ * ウィンドウのサイズ変更時にカメラとレンダラーの設定を更新する
+ */
+const onWindowResize = () => {
   if (!canvasContainer.value) return;
   const { clientWidth: w, clientHeight: h } = canvasContainer.value;
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
-}
+};
 
-// マウス移動ハンドラ
-function onMouseMove(event: MouseEvent) {
+/**
+ * マウスムーブハンドラ
+ * マウスの位置をワールド座標に変換し、パーティクルのターゲット位置を更新する
+ */
+const onMouseMove = (event: MouseEvent) => {
   // ワールド座標に変換
   const vector = new Vector3(
     (event.clientX / window.innerWidth) * 2 - 1,
@@ -112,10 +118,13 @@ function onMouseMove(event: MouseEvent) {
   }
   prevMouseX = pos.x;
   prevMouseY = pos.y;
-}
+};
 
-// スプライトテクスチャ生成
-function createSpriteTexture(): CanvasTexture {
+/**
+ * スプライトテクスチャを生成する関数
+ * 円形のスプライトを描画したCanvasTextureを返す
+ */
+const createSpriteTexture = (): CanvasTexture => {
   const spriteCanvas = document.createElement("canvas");
   spriteCanvas.width = 64;
   spriteCanvas.height = 64;
@@ -127,10 +136,14 @@ function createSpriteTexture(): CanvasTexture {
     ctx.fill();
   }
   return new CanvasTexture(spriteCanvas);
-}
+};
 
-// テキスト輪郭の座標配列生成
-function createTextOutlineCanvas(text: string) {
+/**
+ * テキストの輪郭をCanvas上に描画し、パーティクルの座標を取得する関数
+ * @param text - 描画するテキスト
+ * @returns パーティクルの座標配列
+ */
+const createTextOutlineCanvas = (text: string) => {
   const textCanvas = document.createElement("canvas");
   textCanvas.width = 1024;
   textCanvas.height = 256;
@@ -157,10 +170,16 @@ function createTextOutlineCanvas(text: string) {
     }
   }
   return { pointsArr: arr };
-}
+};
 
-// パーティクルデータ初期化
-function initParticleData(pointsArr: number[]) {
+// テキスト輪郭から得たパーティクルの座標
+const { pointsArr } = createTextOutlineCanvas("あ");
+
+/**
+ * パーティクルデータを初期化する関数
+ * @param pointsArr - パーティクルの座標配列
+ */
+const initParticleData = (pointsArr: number[]) => {
   const count = pointsArr.length / 3;
   targetPositions = new Float32Array(pointsArr);
   positions = new Float32Array(pointsArr.length);
@@ -188,10 +207,14 @@ function initParticleData(pointsArr: number[]) {
   geometry.setAttribute("position", new BufferAttribute(positions, 3));
   geometry.setAttribute("color", new BufferAttribute(colors, 3));
   geometry.setAttribute("size", new BufferAttribute(sizes, 1));
-}
+};
 
-// マテリアル生成
-function createPointsMaterial(map: CanvasTexture): PointsMaterial {
+/**
+ * パーティクルのマテリアルを生成する関数
+ * @param map - スプライトテクスチャ
+ * @returns PointsMaterial
+ */
+const createPointsMaterial = (map: CanvasTexture): PointsMaterial => {
   return new PointsMaterial({
     size: 3,
     map,
@@ -202,26 +225,32 @@ function createPointsMaterial(map: CanvasTexture): PointsMaterial {
     depthTest: false,
     depthWrite: false,
   });
-}
+};
 
-// アニメーションループ
-function animate() {
+/**
+ * アニメーションループ
+ * requestAnimationFrameを使用してパーティクルの更新と描画を行う
+ */
+const animate = () => {
   requestAnimationFrame(animate);
   updateParticles();
   checkArrival();
   geometry.attributes.position.needsUpdate = true;
   renderer.render(scene, camera);
-}
+};
 
-// パーティクル更新
-function updateParticles() {
+/**
+ * パーティクルの位置を更新する関数
+ * マウス位置に近いパーティクルをランダムに動かし、ターゲット位置に向かって移動させる
+ */
+const updateParticles = () => {
   const pos = geometry.attributes.position.array as FloatArray;
   for (let i = 0, idx = 0; i < pos.length; i += 3, idx++) {
     const sp = speeds[idx];
     const dx = pos[i] - prevMouseX;
     const dy = pos[i + 1] - prevMouseY;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 20) {
+    if (dist < 20 && prevMouseX !== null && prevMouseY !== null) {
       pos[i] += dx * (Math.random() + 0.5);
       pos[i + 1] += dy * (Math.random() + 0.8);
     }
@@ -229,10 +258,13 @@ function updateParticles() {
     pos[i + 1] += (targetPositions[i + 1] - pos[i + 1]) * sp;
     pos[i + 2] += (targetPositions[i + 2] - pos[i + 2]) * sp;
   }
-}
+};
 
-// 到達判定
-function checkArrival() {
+/**
+ * 全パーティクルが所定の位置に到達したかをチェックする関数
+ * 到達した場合はフラグを立ててメッセージを表示する
+ */
+const checkArrival = () => {
   if (hasArrived) return;
   const pos = geometry.attributes.position.array as FloatArray;
   const len = pos.length;
@@ -244,7 +276,7 @@ function checkArrival() {
   }
   hasArrived = true;
   console.log("全パーティクルが所定の位置に到達しました");
-}
+};
 </script>
 
 <style scoped></style>

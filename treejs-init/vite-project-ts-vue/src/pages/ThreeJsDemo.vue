@@ -3,8 +3,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
-import { PerspectiveCamera, Scene, WebGLRenderer, Vector3, CanvasTexture, Color, MathUtils, BufferGeometry, BufferAttribute, PointsMaterial, AdditiveBlending, Points } from 'three';
+import { onMounted, onUnmounted, ref } from "vue";
+import {
+  PerspectiveCamera,
+  Scene,
+  WebGLRenderer,
+  Vector3,
+  CanvasTexture,
+  Color,
+  MathUtils,
+  BufferGeometry,
+  BufferAttribute,
+  PointsMaterial,
+  AdditiveBlending,
+  Points,
+} from "three";
 
 type FloatArray = Float32Array;
 
@@ -27,26 +40,31 @@ let prevMouseX = null;
 let prevMouseY = null;
 
 // テキスト輪郭から得たパーティクルの座標
-const { pointsArr } = createTextOutlineCanvas('あ');
+const { pointsArr } = createTextOutlineCanvas("あ");
 
 // onMountedライフサイクルで初期化
 onMounted(() => {
   init();
   animate();
-  window.addEventListener('resize', onWindowResize);
-  window.addEventListener('mousemove', onMouseMove, false);
+  window.addEventListener("resize", onWindowResize);
+  window.addEventListener("mousemove", onMouseMove, false);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', onWindowResize);
-  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener("resize", onWindowResize);
+  window.removeEventListener("mousemove", onMouseMove);
 });
 
 // 初期化関数
 function init() {
   // Scene, Camera, Rendererのセットアップ
   scene = new Scene();
-  camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera = new PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000,
+  );
   camera.position.z = 500;
 
   renderer = new WebGLRenderer({ antialias: true, alpha: true });
@@ -81,7 +99,7 @@ function onMouseMove(event: MouseEvent) {
   const vector = new Vector3(
     (event.clientX / window.innerWidth) * 2 - 1,
     -(event.clientY / window.innerHeight) * 2 + 1,
-    0.5
+    0.5,
   );
   vector.unproject(camera);
   const dir = vector.sub(camera.position).normalize();
@@ -98,12 +116,12 @@ function onMouseMove(event: MouseEvent) {
 
 // スプライトテクスチャ生成
 function createSpriteTexture(): CanvasTexture {
-  const spriteCanvas = document.createElement('canvas');
+  const spriteCanvas = document.createElement("canvas");
   spriteCanvas.width = 64;
   spriteCanvas.height = 64;
-  const ctx = spriteCanvas.getContext('2d');
+  const ctx = spriteCanvas.getContext("2d");
   if (ctx) {
-    ctx.fillStyle = 'white';
+    ctx.fillStyle = "white";
     ctx.beginPath();
     ctx.arc(32, 32, 30, 0, Math.PI * 2);
     ctx.fill();
@@ -113,18 +131,23 @@ function createSpriteTexture(): CanvasTexture {
 
 // テキスト輪郭の座標配列生成
 function createTextOutlineCanvas(text: string) {
-  const textCanvas = document.createElement('canvas');
+  const textCanvas = document.createElement("canvas");
   textCanvas.width = 1024;
   textCanvas.height = 256;
-  const ctx = textCanvas.getContext('2d');
+  const ctx = textCanvas.getContext("2d");
   if (!ctx) return { pointsArr: [] };
-  const fontSize = Math.min((textCanvas.width / text.length), textCanvas.height);
-  ctx.fillStyle = 'white';
+  const fontSize = Math.min(textCanvas.width / text.length, textCanvas.height);
+  ctx.fillStyle = "white";
   ctx.font = `bold ${fontSize}px Arial`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
-  const imgData = ctx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
+  const imgData = ctx.getImageData(
+    0,
+    0,
+    textCanvas.width,
+    textCanvas.height,
+  ).data;
   const arr: number[] = [];
   for (let y = 0; y < textCanvas.height; y += 3) {
     for (let x = 0; x < textCanvas.width; x += 3) {
@@ -162,9 +185,9 @@ function initParticleData(pointsArr: number[]) {
     sizes[i] = Math.random() * 12 + 2;
   }
   geometry = new BufferGeometry();
-  geometry.setAttribute('position', new BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new BufferAttribute(colors, 3));
-  geometry.setAttribute('size', new BufferAttribute(sizes, 1));
+  geometry.setAttribute("position", new BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  geometry.setAttribute("size", new BufferAttribute(sizes, 1));
 }
 
 // マテリアル生成
@@ -220,9 +243,8 @@ function checkArrival() {
     if (dx * dx + dy * dy + dz * dz > 1) return;
   }
   hasArrived = true;
-  console.log('全パーティクルが所定の位置に到達しました');
+  console.log("全パーティクルが所定の位置に到達しました");
 }
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

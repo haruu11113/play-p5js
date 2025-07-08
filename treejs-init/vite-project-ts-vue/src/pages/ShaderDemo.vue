@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from "vue";
 import {
   Scene,
   PerspectiveCamera,
@@ -11,11 +11,11 @@ import {
   Mesh,
   SphereGeometry,
   ShaderMaterial,
-  Vector3
-} from 'three';
+  Vector3,
+} from "three";
 
-import vertexShader   from '@/assets/normal.vert?raw'
-import fragmentShader from '@/assets/normal.frag?raw'
+import vertexShader from "@/assets/normal.vert?raw";
+import fragmentShader from "@/assets/normal.frag?raw";
 
 type SensorData = { x: number; y: number; z: number };
 
@@ -52,7 +52,7 @@ const initThree = (): void => {
     75,
     window.innerWidth / window.innerHeight,
     0.1,
-    1000
+    1000,
   );
   camera.position.z = 5;
 
@@ -69,19 +69,19 @@ const initThree = (): void => {
       uniforms: {
         uTime: { value: 0.0 },
         uAcceleration: { value: new Vector3() },
-        uIntensity: { value: 0.0 }
-      }
+        uIntensity: { value: 0.0 },
+      },
     });
     const mesh = new Mesh(geometry, material);
     mesh.position.set(
       (Math.random() - 0.5) * 10,
       (Math.random() - 0.5) * 10,
-      (Math.random() - 0.5) * 5
+      (Math.random() - 0.5) * 5,
     );
     (mesh.userData as any).velocity = new Vector3(
       (Math.random() - 0.5) * INITIAL_SPEED,
       (Math.random() - 0.5) * INITIAL_SPEED,
-      (Math.random() - 0.5) * INITIAL_SPEED * 0.5
+      (Math.random() - 0.5) * INITIAL_SPEED * 0.5,
     );
     scene.add(mesh);
     meshes.push(mesh);
@@ -91,25 +91,25 @@ const initThree = (): void => {
 };
 
 const connectWebSocket = (): void => {
-  ws = new WebSocket('ws://localhost:8080');
-  ws.onopen = () => console.log('WebSocket connected');
-  ws.onmessage = event => {
+  ws = new WebSocket(`ws://${window.location.host}/ws-udp`);
+  ws.onopen = () => console.log("WebSocket connected");
+  ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      if (data.type?.includes('acc')) {
+      if (data.type?.includes("acc")) {
         previousSensorData = { ...sensorData };
         sensorData = { x: data.x || 0, y: data.y || 0, z: data.z || 0 };
         calculateIntensity();
       }
     } catch (err) {
-      console.error('Failed to parse sensor data:', err);
+      console.error("Failed to parse sensor data:", err);
     }
   };
   ws.onclose = () => {
-    console.log('WebSocket closed, retrying in 5s');
-    setTimeout(connectWebSocket, 5000);
+    console.log("WebSocket closed, retrying in 5s");
+    setTimeout(connectWebSocket, 50000);
   };
-  ws.onerror = err => console.error('WebSocket error:', err);
+  ws.onerror = (err) => console.error("WebSocket error:", err);
 };
 
 const animate = (): void => {
@@ -118,18 +118,20 @@ const animate = (): void => {
 
   const fovRad = (camera.fov * Math.PI) / 180;
   const viewHeight =
-    Math.abs(camera.position.z - meshes[0].position.z) * Math.tan(fovRad / 2) * 2;
+    Math.abs(camera.position.z - meshes[0].position.z) *
+    Math.tan(fovRad / 2) *
+    2;
   const viewWidth = viewHeight * camera.aspect;
   const halfW = viewWidth / 2;
   const halfH = viewHeight / 2;
 
-  meshes.forEach(mesh => {
+  meshes.forEach((mesh) => {
     const mat = mesh.material as ShaderMaterial;
     mat.uniforms.uTime.value = elapsedTime;
     mat.uniforms.uAcceleration.value.set(
       sensorData.x,
       sensorData.y,
-      sensorData.z
+      sensorData.z,
     );
     mat.uniforms.uIntensity.value = intensity;
 
@@ -143,18 +145,21 @@ const animate = (): void => {
     if (
       mesh.position.x + SPHERE_RADIUS > halfW ||
       mesh.position.x - SPHERE_RADIUS < -halfW
-    ) vel.x *= -1;
+    )
+      vel.x *= -1;
     if (
       mesh.position.y + SPHERE_RADIUS > halfH ||
       mesh.position.y - SPHERE_RADIUS < -halfH
-    ) vel.y *= -1;
+    )
+      vel.y *= -1;
 
     const zMin = camera.position.z - 10;
     const zMax = camera.position.z - 1;
     if (
       mesh.position.z + SPHERE_RADIUS > zMax ||
       mesh.position.z - SPHERE_RADIUS < zMin
-    ) vel.z *= -1;
+    )
+      vel.z *= -1;
   });
 
   renderer.render(scene, camera);
@@ -172,11 +177,11 @@ onMounted(() => {
   initThree();
   connectWebSocket();
   animate();
-  window.addEventListener('resize', onResize);
+  window.addEventListener("resize", onResize);
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', onResize);
+  window.removeEventListener("resize", onResize);
   ws.close();
 });
 </script>

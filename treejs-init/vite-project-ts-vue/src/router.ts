@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HelloWorld from "./pages/HelloWorld.vue";
 import ThreeJsDemo from "./pages/ThreeJsDemo.vue";
+import ShaderDemo from "./pages/ShaderDemo.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -12,6 +13,10 @@ export const router = createRouter({
     {
       path: "/threejs",
       component: ThreeJsDemo,
+    },
+    {
+      path: "/shaderdemo",
+      component: ShaderDemo,
     },
   ],
 });

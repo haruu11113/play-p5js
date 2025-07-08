@@ -21,7 +21,6 @@ import {
 
 type FloatArray = Float32Array;
 
-// refs for DOM and Three.js objects
 const canvasContainer = ref<HTMLElement | null>(null);
 let scene: Scene;
 let camera: PerspectiveCamera;

@@ -4,17 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite -d",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint ./src --fix",
     "format": "prettier --write \"src/**/*.{ts,js,vue}\""
   },
   "dependencies": {
+    "dgram": "^1.0.1",
     "prettier": "^3.6.2",
     "three": "^0.178.0",
     "vue": "^3.5.17",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

@@ -8,13 +8,11 @@ import {
   Scene,
   PerspectiveCamera,
   WebGLRenderer,
-  Color,
   BufferGeometry,
   BufferAttribute,
   PointsMaterial,
   AdditiveBlending,
   Points,
-  Vector3,
   CanvasTexture,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
@@ -47,7 +45,7 @@ function init() {
     45,
     window.innerWidth / window.innerHeight,
     1,
-    2000
+    2000,
   );
   camera.position.set(0, 0, 400);
 
@@ -90,9 +88,11 @@ function onResize() {
 
 // --- 2Dキャンバスから文字の点群を生成 ---
 function createTextOutlineCanvas(text: string) {
-  const cw = 1024, ch = 256;
+  const cw = 1024,
+    ch = 256;
   const cvs = document.createElement("canvas");
-  cvs.width = cw; cvs.height = ch;
+  cvs.width = cw;
+  cvs.height = ch;
   const ctx = cvs.getContext("2d")!;
   ctx.fillStyle = "white";
   // フォントサイズを文字数に応じて自動調整
@@ -112,7 +112,7 @@ function createTextOutlineCanvas(text: string) {
         arr.push(
           x - cw / 2,
           ch / 2 - y,
-          (Math.random() - 0.5) * 50  // Z にランダム奥行きを付与
+          (Math.random() - 0.5) * 50, // Z にランダム奥行きを付与
         );
       }
     }
@@ -149,7 +149,7 @@ function initParticleData(pointsArr: number[]) {
     positions[3 * i + 2] = (Math.random() - 0.5) * 500;
     speeds[i] = Math.random() * 0.03 + 0.02;
     // 色もランダム
-    colors[3 * i]     = Math.random();
+    colors[3 * i] = Math.random();
     colors[3 * i + 1] = Math.random();
     colors[3 * i + 2] = Math.random();
     sizes[i] = Math.random() * 6 + 2;
@@ -157,8 +157,8 @@ function initParticleData(pointsArr: number[]) {
 
   geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(positions, 3));
-  geometry.setAttribute("color",    new BufferAttribute(colors,    3));
-  geometry.setAttribute("size",     new BufferAttribute(sizes,     1));
+  geometry.setAttribute("color", new BufferAttribute(colors, 3));
+  geometry.setAttribute("size", new BufferAttribute(sizes, 1));
 }
 
 // --- アニメーションループ ---
@@ -175,7 +175,7 @@ function updateParticles() {
   const pos = geometry.attributes.position.array as Float32Array;
   for (let i = 0; i < pos.length; i += 3) {
     // target へ向かって LERP
-    pos[i]     += (target[i]     - pos[i])     * speeds[i / 3];
+    pos[i] += (target[i] - pos[i]) * speeds[i / 3];
     pos[i + 1] += (target[i + 1] - pos[i + 1]) * speeds[i / 3];
     pos[i + 2] += (target[i + 2] - pos[i + 2]) * speeds[i / 3];
   }

@@ -34,18 +34,19 @@ export const wsUdpPlugin = (): Plugin => ({
     });
 
     const udpSocket = dgram.createSocket("udp4");
-    udpSocket.on("message", (msg, rinfo) => {
+    udpSocket.on("message", (msg) => {
       const data = parseSensorData(msg.toString().trim());
       const payload = JSON.stringify(data);
       for (const c of clients) {
         if (c.readyState === WebSocket.OPEN) c.send(payload);
       }
-      DEBUG && console.log(`[ws-udp] broadcast to ${clients.size} clients`);
+      if (DEBUG) {
+        console.log(`[ws-udp] broadcast to ${clients.size} clients`);
+      }
     });
-    udpSocket.bind(
-      UDP_PORT,
-      () => DEBUG && console.log(`[ws-udp] UDP listening on ${UDP_PORT}`),
-    );
+    udpSocket.bind(UDP_PORT, () => {
+      if (DEBUG) console.log(`[ws-udp] UDP listening on ${UDP_PORT}`);
+    });
 
     // clean up on exit
     process.on("SIGINT", () => {
@@ -53,6 +54,8 @@ export const wsUdpPlugin = (): Plugin => ({
       wss.close(() => process.exit(0));
     });
 
-    DEBUG && console.log("[ws-udp] plugin configured");
+    if (DEBUG) {
+      console.log("[ws-udp] plugin configured");
+    }
   },
 });

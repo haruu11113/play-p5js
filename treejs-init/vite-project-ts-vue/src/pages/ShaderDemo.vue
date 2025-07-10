@@ -78,7 +78,7 @@ const initThree = (): void => {
       (Math.random() - 0.5) * 10,
       (Math.random() - 0.5) * 5,
     );
-    (mesh.userData as any).velocity = new Vector3(
+    mesh.userData.velocity = new Vector3(
       (Math.random() - 0.5) * INITIAL_SPEED,
       (Math.random() - 0.5) * INITIAL_SPEED,
       (Math.random() - 0.5) * INITIAL_SPEED * 0.5,
@@ -139,7 +139,7 @@ const animate = (): void => {
     mesh.rotation.y += 0.005 + sensorData.x * 0.01;
     mesh.rotation.z += sensorData.z * 0.005;
 
-    const vel = (mesh.userData as any).velocity as Vector3;
+    const vel = mesh.userData.velocity as Vector3;
     mesh.position.add(vel);
 
     if (

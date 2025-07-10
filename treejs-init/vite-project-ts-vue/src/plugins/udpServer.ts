@@ -1,7 +1,10 @@
 import * as dgram from "dgram";
 
 export interface SensorData {
-  /* 型定義 */
+  type?: string;
+  x?: number;
+  y?: number;
+  z?: number;
 }
 
 export const parseSensorData = (raw: string): SensorData => {
@@ -28,8 +31,10 @@ export const setupUdp = (
       const sensor = parseSensorData(raw);
       onData(sensor);
       if (debug) console.log("[UDP] Parsed", sensor);
-    } catch (e: any) {
-      if (debug) console.error("[UDP] parse error:", e.message);
+    } catch (e: unknown) {
+      if (debug && e instanceof Error) {
+        console.error("[UDP] parse error:", e.message);
+      }
     }
   });
   socket.on("error", (err) => console.error("[UDP] error", err));

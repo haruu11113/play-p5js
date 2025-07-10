@@ -1,7 +1,8 @@
+import type { Server } from "http";
 import WebSocket, { WebSocketServer } from "ws";
 
 export const setupWebSocket = (
-  httpServer: any,
+  httpServer: Server,
   clients: Set<WebSocket>,
   debug: boolean,
 ) => {

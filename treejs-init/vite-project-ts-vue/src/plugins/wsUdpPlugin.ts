@@ -4,7 +4,6 @@ import WebSocket, { WebSocketServer } from "ws";
 import { parseSensorData } from "./parseSensorData";
 import * as dgram from "dgram";
 
-
 const UDP_PORT = 6666;
 const DEBUG = process.argv.includes("-d") || process.argv.includes("--debug");
 

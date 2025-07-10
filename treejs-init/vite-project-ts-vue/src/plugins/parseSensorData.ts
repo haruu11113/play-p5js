@@ -14,27 +14,27 @@ export const parseSensorData = (rawMessage: string): SensorData => {
     return JSON.parse(rawMessage) as SensorData;
   } catch {
     // JSON 失敗時は CSV 形式として解析
-    if (rawMessage.includes(',')) {
-      const parts = rawMessage.split(',');
+    if (rawMessage.includes(",")) {
+      const parts = rawMessage.split(",");
 
       // "user-acc,-0.127,-0.055,0.975" のような形式を解析
-      if (parts.length >= 4 && parts[0].includes('acc')) {
+      if (parts.length >= 4 && parts[0].includes("acc")) {
         return {
           type: parts[0],
           x: parseFloat(parts[1]) || 0,
           y: parseFloat(parts[2]) || 0,
           z: parseFloat(parts[3]) || 0,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       }
 
       // 他のセンサータイプ用の汎用パース
       if (parts.length >= 2) {
         const sensorType = parts[0];
-        const values = parts.slice(1).map(v => parseFloat(v) || 0);
+        const values = parts.slice(1).map((v) => parseFloat(v) || 0);
         const result: SensorData = {
           type: sensorType,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         // 値の数に応じてプロパティ名を設定
@@ -60,6 +60,6 @@ export const parseSensorData = (rawMessage: string): SensorData => {
     }
 
     // CSVでもない場合はエラーを投げる
-    throw new Error('Unknown data format');
+    throw new Error("Unknown data format");
   }
 };

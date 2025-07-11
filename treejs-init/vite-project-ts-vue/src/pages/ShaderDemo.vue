@@ -13,11 +13,11 @@ import {
   ShaderMaterial,
   Vector3,
 } from "three";
+import { connectWebSocket } from "@/services/wsServices";
+import {  sensorData, intensity } from "@/services/wsServices";
 
 import vertexShader from "@/assets/normal.vert?raw";
 import fragmentShader from "@/assets/normal.frag?raw";
-
-type SensorData = { x: number; y: number; z: number };
 
 const canvasContainer = ref<HTMLElement | null>(null);
 let scene: Scene;
@@ -25,26 +25,11 @@ let camera: PerspectiveCamera;
 let renderer: WebGLRenderer;
 let meshes: Mesh[] = [];
 let startTime = 0;
-let ws: WebSocket;
+let ws: WebSocket = connectWebSocket();
 
 const NUM_SPHERES = 10;
 const SPHERE_RADIUS = 1.0;
 const INITIAL_SPEED = 0.05;
-
-let sensorData: SensorData = { x: 0, y: 0, z: 0 };
-let previousSensorData: SensorData = { x: 0, y: 0, z: 0 };
-let intensity = 0.0;
-
-const calculateIntensity = (): void => {
-  const dx = sensorData.x - previousSensorData.x;
-  const dy = sensorData.y - previousSensorData.y;
-  const dz = sensorData.z - previousSensorData.z;
-  const delta = Math.hypot(dx, dy, dz);
-  const magnitude = Math.hypot(sensorData.x, sensorData.y, sensorData.z);
-  const newIntensity = delta * 10.0 + magnitude * 0.5;
-  intensity = intensity * 0.8 + newIntensity * 0.2;
-  intensity = Math.min(1.0, Math.max(0.0, intensity));
-};
 
 const initThree = (): void => {
   scene = new Scene();
@@ -90,27 +75,6 @@ const initThree = (): void => {
   startTime = Date.now();
 };
 
-const connectWebSocket = (): void => {
-  ws = new WebSocket(`ws://${window.location.host}/ws-udp`);
-  ws.onopen = () => console.log("WebSocket connected");
-  ws.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (data.type?.includes("acc")) {
-        previousSensorData = { ...sensorData };
-        sensorData = { x: data.x || 0, y: data.y || 0, z: data.z || 0 };
-        calculateIntensity();
-      }
-    } catch (err) {
-      console.error("Failed to parse sensor data:", err);
-    }
-  };
-  ws.onclose = () => {
-    console.log("WebSocket closed, retrying in 5s");
-    setTimeout(connectWebSocket, 50000);
-  };
-  ws.onerror = (err) => console.error("WebSocket error:", err);
-};
 
 const animate = (): void => {
   requestAnimationFrame(animate);

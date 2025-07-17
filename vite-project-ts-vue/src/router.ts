@@ -5,6 +5,7 @@ import ThreeJsDemo3D from "./pages/ThreeJsDemo3D.vue";
 import ShaderDemo from "./pages/ShaderDemo.vue";
 import P5JsDemo from "./pages/P5JsDemo.vue";
 import ThreeJsInitDemo from "./pages/ThreeJsInitDemo.vue";
+import ShaderBubleDemo from "./pages/ShaderBubleDemo.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -32,6 +33,10 @@ export const router = createRouter({
     {
       path: "/threejsinit",
       component: ThreeJsInitDemo,
+    },
+    {
+      path: "/shaderbuble",
+      component: ShaderBubleDemo,
     },
   ],
 });

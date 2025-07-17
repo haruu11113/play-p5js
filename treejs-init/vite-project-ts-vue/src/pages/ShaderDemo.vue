@@ -13,8 +13,8 @@ import {
   ShaderMaterial,
   Vector3,
 } from "three";
-import { connectWebSocket } from "@/services/wsServices";
-import {  sensorData, intensity } from "@/services/wsServices";
+import { WebSocketService } from "@/services/WebSocketService";
+import { useSensorData } from "@/composables/useSensorData";
 
 import vertexShader from "@/assets/normal.vert?raw";
 import fragmentShader from "@/assets/normal.frag?raw";
@@ -25,7 +25,16 @@ let camera: PerspectiveCamera;
 let renderer: WebGLRenderer;
 let meshes: Mesh[] = [];
 let startTime = 0;
-let ws: WebSocket = connectWebSocket();
+
+// --- Sensor Data Logic ---
+const { sensorData, intensity, processMessage } = useSensorData();
+
+// --- WebSocket Service ---
+const wsService = new WebSocketService(
+  `ws://${window.location.host}/ws-udp`,
+  processMessage,
+);
+
 
 const NUM_SPHERES = 10;
 const SPHERE_RADIUS = 1.0;
@@ -93,15 +102,15 @@ const animate = (): void => {
     const mat = mesh.material as ShaderMaterial;
     mat.uniforms.uTime.value = elapsedTime;
     mat.uniforms.uAcceleration.value.set(
-      sensorData.x,
-      sensorData.y,
-      sensorData.z,
+      sensorData.value.x,
+      sensorData.value.y,
+      sensorData.value.z,
     );
-    mat.uniforms.uIntensity.value = intensity;
+    mat.uniforms.uIntensity.value = intensity.value;
 
-    mesh.rotation.x += 0.005 + sensorData.y * 0.01;
-    mesh.rotation.y += 0.005 + sensorData.x * 0.01;
-    mesh.rotation.z += sensorData.z * 0.005;
+    mesh.rotation.x += 0.005 + sensorData.value.y * 0.01;
+    mesh.rotation.y += 0.005 + sensorData.value.x * 0.01;
+    mesh.rotation.z += sensorData.value.z * 0.005;
 
     const vel = mesh.userData.velocity as Vector3;
     mesh.position.add(vel);
@@ -139,14 +148,14 @@ const onResize = (): void => {
 
 onMounted(() => {
   initThree();
-  connectWebSocket();
+  wsService.connect();
   animate();
   window.addEventListener("resize", onResize);
 });
 
 onUnmounted(() => {
   window.removeEventListener("resize", onResize);
-  ws.close();
+  wsService.disconnect();
 });
 </script>
 

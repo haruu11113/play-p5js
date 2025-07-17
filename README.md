@@ -1,125 +1,131 @@
 # play-p5js: A Collection of Interactive Visual Experiments
 
-This repository serves as a playground for various interactive visual experiments, primarily utilizing p5.js for creative coding and WebGL shaders for advanced graphical effects. It's a collection of small, self-contained projects demonstrating different techniques and concepts in real-time graphics.
+This repository serves as a playground for various interactive visual experiments, primarily utilizing p5.js, three.js, and WebGL shaders. It's a collection of small, self-contained projects demonstrating different techniques and concepts in real-time graphics. The main application is now a Vue.js project that integrates many of the previous experiments.
 
-## Features
+## Main Application: `vite-project-ts-vue`
 
--   **Diverse Experiments**: Explore a variety of visual effects, from FFT-based image reconstruction to complex WebGL shader animations.
--   **Interactive Demos**: Most experiments are interactive, allowing users to observe dynamic changes based on predefined logic or simulated data.
--   **Modular Structure**: Each experiment is typically contained within its own directory, making it easy to navigate and understand individual projects.
--   **Local Development Server**: Simple setup to run all experiments locally via a basic HTTP server.
+The primary application is a Vue.js project built with Vite. It serves as a showcase for the various visual experiments.
 
-## Getting Started
+### Running the Vue.js Application
 
-To run these experiments locally, you need a simple HTTP server. Python's built-in `http.server` module is recommended for quick setup.
+1.  **Navigate to the project directory:**
 
-### 1. Navigate to the Project Root
+    ```bash
+    cd vite-project-ts-vue
+    ```
 
-Open your terminal or command prompt and change the directory to the root of this repository:
+2.  **Install dependencies:**
 
-```bash
-cd /path/to/play-p5js
-```
+    ```bash
+    npm install
+    ```
 
-### 2. Start the Local Server
+3.  **Run the development server:**
 
-Run the following command to start a simple HTTP server on port 8000:
+    ```bash
+    npm run dev
+    ```
 
-```bash
-python -m http.server 8000
-```
+    This will start the Vite development server, and you can view the application in your browser at the URL provided (usually `http://localhost:5173`).
 
-### 3. Access Experiments in Your Browser
+### Available Routes
 
-Once the server is running, open your web browser and navigate to:
+The Vue application includes the following routes, each showcasing a different visual experiment:
 
--   **Main Index**: `http://localhost:8000/` (This will typically show `index.html` or `main.js` in the root)
--   **Specific Experiments**: You can access individual experiments by navigating to their respective `index.html` files, for example:
-    -   `http://localhost:8000/fft/index.html`
-    -   `http://localhost:8000/shader/index.html`
-    -   `http://localhost:8000/shader-buble/index.html`
+-   `/`: Hello World
+-   `/p5js`: A p5.js sketch.
+-   `/threejs`: A three.js demo.
+-   `/threejs3d`: A 3D three.js demo.
+-   `/threejsinit`: The demo from `treejs-init`.
+-   `/shaderdemo`: A basic shader demo.
+-   `/shaderbuble`: A bubble-like shader effect.
+-   `/shadergizagiza`: A jagged/spiky shader effect.
+-   `/shadergoodcube`: A cube shader effect.
+-   `/shadergoodcube2nd`: A second version of the cube shader effect.
+-   `/shadertyoimaru`: A shader effect with smooth curves.
+-   `/shader2line`: A line-based shader effect.
+
+## Other Experiments
+
+This repository also contains other standalone experiments.
+
+### `shader2-treejs` and `treejs-init` (npm-based)
+
+These projects are based on Node.js and can be run using `npm`.
+
+1.  **Navigate to the project directory:**
+
+    ```bash
+    cd shader2-treejs # or treejs-init
+    ```
+
+2.  **Install dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Start the server (if applicable):**
+
+    Check the `package.json` for the appropriate start command, which is usually:
+
+    ```bash
+    npm start
+    ```
+
+### Older p5.js sketches (Python HTTP Server)
+
+For the remaining standalone p5.js sketches, you can use Python's built-in HTTP server.
+
+1.  **Navigate to the project root directory:**
+
+    ```bash
+    cd /path/to/play-p5js
+    ```
+
+2.  **Start the server:**
+
+    ```bash
+    python -m http.server 8000
+    ```
+
+3.  **Access the experiments in your browser:**
+
+    Open your browser and navigate to the `index.html` file of the desired experiment, for example:
+
     -   `http://localhost:8000/shader2/index.html`
 
 ## Project Structure
 
-The repository is organized into several directories, each containing a distinct experiment or a set of related files.
-
 ```
 play-p5js/
-├── .gitignore               # Git ignore file
-├── CLAUDE.md                # Documentation for Claude (AI agent)
-├── index.html               # Main entry point (if any)
-├── main.js                  # Main p5.js sketch (if any)
+├── vite-project-ts-vue/     # Main Vue.js application
+│   ├── src/
+│   │   ├── pages/           # Vue components for each visual experiment
+│   │   │   ├── P5JsDemo.vue
+│   │   │   ├── ThreeJsInitDemo.vue
+│   │   │   ├── ShaderBubleDemo.vue
+│   │   │   └── ...
+│   │   ├── assets/          # Shader files (.frag, .vert)
+│   │   └── router.ts        # Vue router configuration
+│   ├── package.json
+│   └── ...
+├── shader2-treejs/          # Standalone three.js project
+│   ├── main.js
+│   ├── package.json
+│   └── ...
+├── treejs-init/             # Standalone three.js project
+│   ├── main.js
+│   ├── package.json
+│   └── ...
+├── shader-buble/
+├── shader-gizagiza/
+├── shader-good-cube/
+├── shader-good-cube-2nd/
+├── shader-tyoimaru/
+├── shader2/
+├── shader2-line/
+├── ... (other legacy experiment folders)
 ├── README.md                # This file
-├── fft/                     # Experiments related to Fast Fourier Transform (FFT)
-│   ├── coeffs_color.json
-│   ├── coeffs.json
-│   ├── fft_reconstruct_.py
-│   ├── fft.py
-│   ├── fftWorker.js
-│   ├── image_reconstructed.png
-│   ├── image.png
-│   ├── index.html           # Entry point for FFT demo
-│   ├── main.js              # p5.js sketch for FFT demo
-│   └── shader/              # Shader specific to FFT
-├── glsl/                    # General GLSL shader examples
-│   └── adv-sample.glsl
-├── shader/                  # Basic shader examples
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   └── normal.vert
-├── shader-buble/            # Bubble-like shader effect
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   ├── normal.vert
-│   └── キーボードでの操作説明.md # Keyboard operation instructions (Japanese)
-├── shader-gizagiza/         # Jagged/spiky shader effect
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   └── normal.vert
-├── shader-good-cube/        # Cube shader effect (first version)
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   ├── normal.vert
-│   └── キーボードでの操作説明.md
-├── shader-good-cube-2nd/    # Cube shader effect (second version)
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   ├── normal.vert
-│   └── キーボードでの操作説明.md
-├── shader-tyoimaru/         # Another shader effect with server components
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   ├── normal.vert
-│   ├── package.json
-│   ├── README.md
-│   ├── requirements.txt
-│   ├── ws_client.py
-│   ├── ws_server.py
-│   └── ws-server.js
-├── shader2/                 # Advanced shader experiment (e.g., accelerometer data visualization)
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   ├── normal.vert
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── README.md            # Detailed README for this specific project
-│   ├── unified-server.js
-│   ├── ws-server.js
-│   └── line/
-├── shader2-line/            # Line-based shader effect
-│   ├── index.html
-│   ├── main.js
-│   ├── normal.frag
-│   ├── normal.vert
-│   └── キーボードでの操作説明.md
-└── ... (other configuration files and node_modules)
+└── ... (other configuration files)
 ```
-

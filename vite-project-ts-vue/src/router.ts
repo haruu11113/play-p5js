@@ -3,6 +3,8 @@ import HelloWorld from "./pages/HelloWorld.vue";
 import ThreeJsDemo from "./pages/ThreeJsDemo.vue";
 import ThreeJsDemo3D from "./pages/ThreeJsDemo3D.vue";
 import ShaderDemo from "./pages/ShaderDemo.vue";
+import P5JsDemo from "./pages/P5JsDemo.vue";
+import ThreeJsInitDemo from "./pages/ThreeJsInitDemo.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -22,6 +24,14 @@ export const router = createRouter({
     {
       path: "/shaderdemo",
       component: ShaderDemo,
+    },
+    {
+      path: "/p5js",
+      component: P5JsDemo,
+    },
+    {
+      path: "/threejsinit",
+      component: ThreeJsInitDemo,
     },
   ],
 });
